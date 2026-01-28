@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reading Buddy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-indigo-50">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- CONFIGURATION ---
+        const GEMINI_API_KEY = "PASTE_YOUR_GEMINI_KEY_HERE";
+        const firebaseConfig = {
+            apiKey: "PASTE_YOUR_FIREBASE_KEY_HERE",
+            authDomain: "your-app.firebaseapp.com",
+            projectId: "your-app-id",
+            storageBucket: "your-app.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef"
+        };
+
+        const DRA_LEVELS = [
+            "A1 (Pre-Reader)", "A2 (Emergent)", "1 (Emergent)", "2 (Beginning)", "3 (Beginning)",
+            "4 (Beginning)", "6 (Beginning)", "8 (Developing)", "10 (Developing)", "12 (Developing)",
+            "14 (Intermediate)", "16 (Intermediate)", "18 (Intermediate)", "20 (Advanced)", "24 (Advanced)",
+            "28 (Fluent)", "30 (Fluent)", "34 (Fluent)", "38 (Extended)", "40 (Extended)",
+            "50 (Advanced Fluent)", "60 (Mastery)"
+        ];
+
+        const getNormalizedWords = (text) => {
+            if (!text) return [];
+            return text.toLowerCase().replace(/[^a-z0-9'\s]/g, ' ').replace(/\s+/g, ' ').trim().split(' ').filter(w => w.length > 0);
+        };
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+        function App() {
+            const [currentLevelIndex, setCurrentLevelIndex] = useState(0);
+            const [currentBook, setCurrentBook] = useState(null);
+            const [isListening, setIsListening] = useState(false);
+            const [capturedTranscript, setCapturedTranscript] = useState('');
+            const [isLoading, setIsLoading] = useState(false);
+            const [sessionResults, setSessionResults] = useState(null);
+            
+            const recognitionRef = useRef(null);
+
+            // Initialize Speech
+            useEffect(() => {
+                if (SpeechRecognition && !recognitionRef.current) {
+                    const recognition = new SpeechRecognition();
+                    recognition.continuous = true;
+                    recognition.interimResults = true;
+                    recognition.onresult = (e) => {
+                        let str = '';
+                        for (let i = 0; i < e.results.length; ++i) {
+                            str += e.results[i][0].transcript;
+                        }
+                        setCapturedTranscript(str);
+                    };
+                    recognitionRef.current = recognition;
+                }
+            }, []);
+
+            const callGemini = async (prompt) => {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+                const data = await res.json();
+                return data.candidates[0].content.parts[0].text;
+            };
+
+            const generateBook = async () => {
+                setIsLoading(true);
+                setSessionResults(null);
+                try {
+                    const level = DRA_LEVELS[currentLevelIndex];
+                    const prompt = `Write a 3-sentence story for a child at DRA level ${level}. Format: Title\n\nStory.`;
+                    const text = await callGemini(prompt);
+                    const parts = text.split('\n\n');
+                    setCurrentBook({ title: parts[0], text: parts[1] });
+                } catch (e) {
+                    alert("Check your API Key!");
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+
+            const startReading = () => {
+                setCapturedTranscript('');
+                setIsListening(true);
+                recognitionRef.current.start();
+            };
+
+            const stopReading = () => {
+                recognitionRef.current.stop();
+                setIsListening(false);
+                
+                // Simple accuracy check
+                const expected = getNormalizedWords(currentBook.text);
+                const actual = getNormalizedWords(capturedTranscript);
+                const correct = expected.filter(word => actual.includes(word)).length;
+                const accuracy = correct / expected.length;
+                
+                setSessionResults({
+                    accuracy: Math.round(accuracy * 100),
+                    isSuccess: accuracy > 0.8
+                });
+            };
+
+            return (
+                <div className="max-w-xl mx-auto py-10 px-4">
+                    <header className="bg-white p-6 rounded-3xl shadow-lg border-b-4 border-indigo-200 flex justify-between items-center mb-6">
+                        <h1 className="text-xl font-black text-indigo-600">Reading Buddy</h1>
+                        <span className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold">
+                            Level: {DRA_LEVELS[currentLevelIndex]}
+                        </span>
+                    </header>
+
+                    <div className="bg-white p-8 rounded-3xl shadow-xl text-center">
+                        {!currentBook ? (
+                            <button 
+                                onClick={generateBook}
+                                disabled={isLoading}
+                                className="bg-indigo-600 text-white px-8 py-3 rounded-2xl font-bold hover:bg-indigo-700 transition-all"
+                            >
+                                {isLoading ? "Writing story..." : "Generate New Story"}
+                            </button>
+                        ) : (
+                            <div className="space-y-6">
+                                <h2 className="text-indigo-400 italic font-bold">{currentBook.title}</h2>
+                                <p className="text-2xl font-medium text-slate-800 leading-relaxed">
+                                    {currentBook.text}
+                                </p>
+                                
+                                {isListening && (
+                                    <div className="text-sm text-indigo-500 animate-pulse italic">
+                                        Hearing: {capturedTranscript}
+                                    </div>
+                                )}
+
+                                <div className="pt-4">
+                                    {!isListening ? (
+                                        <button onClick={startReading} className="w-full py-4 bg-green-500 text-white rounded-2xl font-black text-xl">START READING</button>
+                                    ) : (
+                                        <button onClick={stopReading} className="w-full py-4 bg-red-500 text-white rounded-2xl font-black text-xl">I'M DONE</button>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {sessionResults && (
+                            <div className={`mt-6 p-6 rounded-2xl border-4 ${sessionResults.isSuccess ? 'bg-green-50 border-green-200' : 'bg-orange-50 border-orange-200'}`}>
+                                <h3 className="text-2xl font-black">{sessionResults.accuracy}% Accuracy</h3>
+                                <p className="font-bold text-slate-600">{sessionResults.isSuccess ? "🎉 Great job!" : "💪 Keep practicing!"}</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
