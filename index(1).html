@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reading Buddy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-sky-50 font-sans">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        function App() {
+            const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_key') || '');
+            const [story, setStory] = useState(null);
+            const [transcript, setTranscript] = useState('');
+            const [isListening, setIsListening] = useState(false);
+            const [loading, setLoading] = useState(false);
+            const [history, setHistory] = useState(JSON.parse(localStorage.getItem('reading_history') || '[]'));
+
+            // Save Key to browser memory
+            const saveKey = (e) => {
+                const key = e.target.value;
+                setApiKey(key);
+                localStorage.setItem('gemini_key', key);
+            };
+
+            const generateStory = async () => {
+                if (!apiKey) return alert("Please enter your Gemini API Key first!");
+                setLoading(true);
+                try {
+                    const prompt = "Write a very short, 3-sentence story for a 1st grader about a friendly animal. Format: Title\n\nStory.";
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    });
+                    const data = await res.json();
+                    const text = data.candidates[0].content.parts[0].text;
+                    const [title, content] = text.split('\n\n');
+                    setStory({ title, content });
+                    setTranscript('');
+                } catch (err) {
+                    alert("Error: Check your API key or connection.");
+                }
+                setLoading(false);
+            };
+
+            const startSpeech = () => {
+                const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (!Speech) return alert("Speech recognition not supported in this browser.");
+                const rec = new Speech();
+                rec.continuous = true;
+                rec.onresult = (e) => {
+                    let text = '';
+                    for (let i = 0; i < e.results.length; i++) text += e.results[i][0].transcript;
+                    setTranscript(text);
+                };
+                rec.start();
+                setIsListening(true);
+                window.currentRec = rec;
+            };
+
+            const stopSpeech = () => {
+                window.currentRec?.stop();
+                setIsListening(false);
+                const newEntry = { date: new Date().toLocaleDateString(), title: story.title, text: transcript };
+                const updatedHistory = [newEntry, ...history];
+                setHistory(updatedHistory);
+                localStorage.setItem('reading_history', JSON.stringify(updatedHistory));
+            };
+
+            return (
+                <div className="max-w-md mx-auto p-6">
+                    <header className="text-center mb-8">
+                        <h1 className="text-3xl font-black text-sky-600">Reading Buddy 📖</h1>
+                        <input 
+                            type="password" 
+                            placeholder="Paste Gemini API Key Here" 
+                            className="mt-4 w-full p-2 text-xs border rounded-lg"
+                            value={apiKey}
+                            onChange={saveKey}
+                        />
+                    </header>
+
+                    {!story ? (
+                        <button onClick={generateStory} className="w-full bg-sky-500 text-white font-bold py-4 rounded-2xl shadow-lg hover:bg-sky-600">
+                            {loading ? "Magic happening..." : "Get a New Story"}
+                        </button>
+                    ) : (
+                        <div className="bg-white p-6 rounded-3xl shadow-xl space-y-4">
+                            <h2 className="text-center font-bold text-sky-400 uppercase tracking-widest">{story.title}</h2>
+                            <p className="text-2xl text-gray-800 leading-relaxed text-center">{story.content}</p>
+                            
+                            <div className="pt-4">
+                                {!isListening ? (
+                                    <button onClick={startSpeech} className="w-full bg-green-500 text-white py-4 rounded-xl font-bold">START READING</button>
+                                ) : (
+                                    <button onClick={stopSpeech} className="w-full bg-red-500 text-white py-4 rounded-xl font-bold">STOP & SAVE</button>
+                                )}
+                            </div>
+                            {transcript && <p className="text-sm italic text-gray-400 mt-2">I heard: "{transcript}"</p>}
+                        </div>
+                    )}
+
+                    <div className="mt-10">
+                        <h3 className="font-bold text-gray-500 mb-2">Reading Log</h3>
+                        {history.map((item, i) => (
+                            <div key={i} className="bg-white/50 p-3 rounded-lg mb-2 text-sm border">
+                                <strong>{item.date}:</strong> {item.title}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
