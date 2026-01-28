@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reading Buddy (No API Version)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-orange-50 font-sans">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- ADD YOUR STORIES HERE ---
+        const STORY_BANK = [
+            { title: "The Blue Cat", level: "A1", text: "The cat is blue. The cat is big. The cat sits." },
+            { title: "Fun in the Sun", level: "A1", text: "The sun is hot. I like the sun. We play." },
+            { title: "The Little Frog", level: "A2", text: "A little frog sat on a green log. He saw a fly. He jumped high!" },
+            { title: "My Robot", level: "1", text: "I have a new robot. He is made of metal. He can walk and talk." }
+        ];
+
+        function App() {
+            const [story, setStory] = useState(null);
+            const [transcript, setTranscript] = useState('');
+            const [isListening, setIsListening] = useState(false);
+            const [history, setHistory] = useState(JSON.parse(localStorage.getItem('reading_history') || '[]'));
+
+            const pickRandomStory = () => {
+                const random = STORY_BANK[Math.floor(Math.random() * STORY_BANK.length)];
+                setStory(random);
+                setTranscript('');
+            };
+
+            const startSpeech = () => {
+                const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (!Speech) return alert("Please use Chrome or Safari for speech recognition.");
+                const rec = new Speech();
+                rec.continuous = true;
+                rec.interimResults = true;
+                rec.onresult = (e) => {
+                    let text = '';
+                    for (let i = 0; i < e.results.length; i++) text += e.results[i][0].transcript;
+                    setTranscript(text);
+                };
+                rec.start();
+                setIsListening(true);
+                window.currentRec = rec;
+            };
+
+            const stopSpeech = () => {
+                window.currentRec?.stop();
+                setIsListening(false);
+                const newEntry = { date: new Date().toLocaleDateString(), title: story.title, text: transcript };
+                const updatedHistory = [newEntry, ...history];
+                setHistory(updatedHistory);
+                localStorage.setItem('reading_history', JSON.stringify(updatedHistory));
+            };
+
+            return (
+                <div className="max-w-md mx-auto p-6">
+                    <header className="text-center mb-8">
+                        <h1 className="text-3xl font-black text-orange-600">Reading Buddy 📖</h1>
+                        <p className="text-gray-500 font-bold">Offline Edition</p>
+                    </header>
+
+                    {!story ? (
+                        <button onClick={pickRandomStory} className="w-full bg-orange-500 text-white font-black py-6 rounded-3xl shadow-xl hover:bg-orange-600 transform transition active:scale-95">
+                            CHOOSE A STORY
+                        </button>
+                    ) : (
+                        <div className="bg-white p-8 rounded-[2rem] shadow-2xl border-b-8 border-orange-200 space-y-6">
+                            <div className="flex justify-between items-center">
+                                <span className="bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Level {story.level}</span>
+                                <button onClick={() => setStory(null)} className="text-gray-300 hover:text-gray-600">✕</button>
+                            </div>
+                            <h2 className="text-center font-black text-2xl text-gray-800">{story.title}</h2>
+                            <p className="text-3xl text-gray-700 leading-relaxed text-center font-medium">{story.text}</p>
+                            
+                            <div className="pt-4 space-y-4">
+                                {!isListening ? (
+                                    <button onClick={startSpeech} className="w-full bg-green-500 text-white py-4 rounded-2xl font-black text-xl shadow-lg">START READING</button>
+                                ) : (
+                                    <button onClick={stopSpeech} className="w-full bg-red-500 text-white py-4 rounded-2xl font-black text-xl animate-pulse shadow-lg">STOP & SAVE</button>
+                                )}
+                            </div>
+                            {transcript && (
+                                <div className="p-4 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                                    <p className="text-xs font-bold text-gray-400 uppercase mb-1">What I heard:</p>
+                                    <p className="text-sm italic text-gray-600">"{transcript}"</p>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    <div className="mt-12">
+                        <h3 className="font-black text-gray-400 uppercase text-xs tracking-widest mb-4">Past Readings</h3>
+                        <div className="space-y-2">
+                            {history.length === 0 && <p className="text-gray-400 italic text-sm text-center">No stories read yet!</p>}
+                            {history.map((item, i) => (
+                                <div key={i} className="bg-white p-4 rounded-xl shadow-sm flex justify-between items-center border border-orange-100">
+                                    <div>
+                                        <p className="font-bold text-gray-800">{item.title}</p>
+                                        <p className="text-[10px] text-gray-400 uppercase font-bold">{item.date}</p>
+                                    </div>
+                                    <div className="text-green-500 text-xl">✅</div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
