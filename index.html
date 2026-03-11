@@ -1218,6 +1218,13 @@ function renderReadIt(area, item) {
         </div>
         ${!micActive ? `<button class="btn-nav btn-next" style="margin:16px auto 0;display:block" onclick="skipReadIt()">Skip (no mic) →</button>` : ''}
       </div>
+      <div id="readitTapFallback" style="display:none;margin-top:12px;">
+        <div style="font-size:0.85rem;font-weight:700;color:#888;margin-bottom:8px;">Tap the word you just read:</div>
+        <div class="tap-choices">${generateChoices(item.word.toLowerCase(),'readit').map(c=>`
+          <button class="tap-choice" style="font-size:1.4rem;min-width:110px"
+            onclick="checkAnswer('${c}','${item.word.toLowerCase()}','readit')">${c.toUpperCase()}</button>`).join('')}
+        </div>
+      </div>
 
       <div class="feedback-msg" id="feedbackMsg"></div>
 
@@ -1379,11 +1386,12 @@ function tapAnswer(chosen, target, type) {
 }
 
 // ── SPEECH RECOGNITION ────────────────────────────────
+let micPermissionDenied = false; // track permanent denial for this session
+
 function setupMic(target, type) {
   if (!hasSpeechSupport()) return;
 
   // FIX: Always create a fresh recognition instance per item
-  // Reusing the old instance causes stale handlers to fire on wrong items
   if (recognition) { try { recognition.abort(); } catch(e) {} recognition = null; }
   recognition = initSpeech();
   if (!recognition) return;
@@ -1396,21 +1404,34 @@ function setupMic(target, type) {
   recognition.onerror = (e) => {
     stopListening();
     if (e.error === 'not-allowed') {
-      setFeedback("Mic permission denied — tap an answer below! 🎤", false);
+      micPermissionDenied = true;
+      const btn = document.getElementById('micBtn');
+      if (btn) {
+        btn.style.opacity = '0.25';
+        btn.style.cursor = 'not-allowed';
+        btn.onclick = null;
+      }
+      // Reveal tap fallback if in Read It section
+      const fallback = document.getElementById('readitTapFallback');
+      if (fallback) fallback.style.display = 'block';
+      setFeedback('🎤 Mic blocked. Tap the word below — or click 🔒 in your browser bar to allow the mic.', false);
     } else {
-      setFeedback("Couldn't hear you — try again or tap below! 🎤", false);
+      setFeedback("Couldn't hear that — try again or tap an answer below.", false);
     }
   };
   recognition.onend = () => stopListening();
 }
 
 function startListening() {
-  if (!recognition) return;
+  if (!recognition || micPermissionDenied) return;
   const btn = document.getElementById('micBtn');
   const waves = document.getElementById('waveBars');
   if(btn) btn.classList.add('listening');
   if(waves) waves.classList.add('active');
-  try { recognition.start(); } catch(e) {}
+  try { recognition.start(); } catch(e) {
+    stopListening();
+    setFeedback("Mic error — tap an answer below.", false);
+  }
 }
 
 function stopListening() {
