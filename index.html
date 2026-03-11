@@ -1,176 +1,1842 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reading Buddy</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cubby Reads 🐻</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Baloo+2:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --honey: #F5A623;
+    --honey-dark: #D4881A;
+    --forest: #2D6A4F;
+    --forest-light: #52B788;
+    --forest-pale: #D8F3DC;
+    --bark: #6B4226;
+    --cream: #FFF9F0;
+    --sky: #B7E4F9;
+    --sky-dark: #4AACDA;
+    --red-soft: #FF6B6B;
+    --purple-soft: #9B79D1;
+    --letter-bg: #FFFBF0;
+    --shadow: 0 8px 32px rgba(45,106,79,0.13);
+    --shadow-sm: 0 3px 12px rgba(45,106,79,0.10);
+    --radius: 24px;
+    --radius-sm: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--cream);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── BACKGROUND ── */
+  .bg-trees {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background:
+      radial-gradient(ellipse at 10% 90%, rgba(82,183,136,0.18) 0%, transparent 50%),
+      radial-gradient(ellipse at 90% 85%, rgba(82,183,136,0.13) 0%, transparent 45%),
+      radial-gradient(ellipse at 50% 0%, rgba(245,166,35,0.10) 0%, transparent 60%),
+      var(--cream);
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: relative; z-index: 10;
+    background: var(--forest);
+    padding: 14px 28px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 4px 20px rgba(45,106,79,0.25);
+  }
+  .logo {
+    display: flex; align-items: center; gap: 12px;
+    font-family: 'Baloo 2', cursive; font-size: 2rem; font-weight: 800;
+    color: var(--honey); letter-spacing: -0.5px;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+  .logo-bear { font-size: 2.2rem; animation: bearBob 2.5s ease-in-out infinite; }
+  @keyframes bearBob { 0%,100%{transform:translateY(0) rotate(-3deg)} 50%{transform:translateY(-5px) rotate(3deg)} }
+
+  .header-btns { display: flex; gap: 10px; }
+  .btn-sm {
+    padding: 8px 18px; border-radius: 50px; border: none; cursor: pointer;
+    font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 0.9rem;
+    transition: all 0.2s;
+  }
+  .btn-outline {
+    background: transparent; border: 2px solid rgba(255,255,255,0.5); color: white;
+  }
+  .btn-outline:hover { background: rgba(255,255,255,0.15); border-color: white; }
+  .btn-honey { background: var(--honey); color: var(--bark); }
+  .btn-honey:hover { background: var(--honey-dark); transform: translateY(-1px); }
+
+  /* ── MAIN LAYOUT ── */
+  main { position: relative; z-index: 5; max-width: 860px; margin: 0 auto; padding: 28px 20px 60px; }
+
+  /* ── SECTION TABS ── */
+  .section-nav {
+    display: flex; gap: 8px; margin-bottom: 28px; flex-wrap: wrap; justify-content: center;
+  }
+  .tab-btn {
+    padding: 10px 20px; border-radius: 50px; border: 2px solid transparent;
+    font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 0.95rem;
+    cursor: pointer; transition: all 0.22s; background: white; color: #555;
+    box-shadow: var(--shadow-sm);
+  }
+  .tab-btn.active { background: var(--forest); color: white; border-color: var(--forest); transform: translateY(-2px); box-shadow: 0 6px 18px rgba(45,106,79,0.28); }
+  .tab-btn:hover:not(.active) { border-color: var(--forest-light); color: var(--forest); }
+
+  /* ── CARDS ── */
+  .card {
+    background: white; border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 36px 32px; margin-bottom: 24px; animation: fadeUp 0.35s ease both;
+  }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+
+  /* ── CUBBY MASCOT ── */
+  .cubby-wrap {
+    display: flex; align-items: flex-end; gap: 18px; margin-bottom: 26px;
+  }
+  .cubby-svg { flex-shrink: 0; }
+  .cubby-bubble {
+    background: var(--forest-pale); border-radius: 18px 18px 18px 4px;
+    padding: 14px 20px; font-size: 1.1rem; font-weight: 700; color: var(--forest);
+    line-height: 1.4; position: relative; box-shadow: var(--shadow-sm);
+    animation: bubblePop 0.3s cubic-bezier(.175,.885,.32,1.275) both;
+  }
+  @keyframes bubblePop { from{opacity:0;transform:scale(0.8)} to{opacity:1;transform:scale(1)} }
+
+  /* ── LETTER DISPLAY ── */
+  .letter-display {
+    display: flex; align-items: center; justify-content: center;
+    gap: 20px; margin: 24px 0;
+  }
+  .letter-card {
+    width: 140px; height: 140px; border-radius: 20px;
+    background: linear-gradient(135deg, var(--honey) 0%, #FFD07A 100%);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-family: 'Baloo 2', cursive; font-size: 5rem; font-weight: 800;
+    color: var(--bark); box-shadow: 0 8px 28px rgba(245,166,35,0.35);
+    cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;
+    user-select: none; line-height: 1;
+  }
+  .letter-card:hover { transform: scale(1.06) rotate(-2deg); box-shadow: 0 14px 36px rgba(245,166,35,0.45); }
+  .letter-card .lower { font-size: 3rem; color: rgba(107,66,38,0.6); }
+
+  .picture-card {
+    flex: 1; border-radius: 20px; background: var(--forest-pale);
+    padding: 20px; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; min-height: 140px; gap: 10px;
+    box-shadow: var(--shadow-sm);
+  }
+  .picture-emoji { font-size: 5rem; line-height: 1; }
+  .picture-word {
+    font-family: 'Baloo 2', cursive; font-size: 1.4rem; font-weight: 700;
+    color: var(--forest); letter-spacing: 1px;
+  }
+
+  /* ── MIC BUTTON ── */
+  .mic-section { display: flex; flex-direction: column; align-items: center; gap: 14px; margin: 20px 0; }
+  .mic-btn {
+    width: 88px; height: 88px; border-radius: 50%; border: none; cursor: pointer;
+    background: linear-gradient(135deg, var(--forest) 0%, var(--forest-light) 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.2rem; box-shadow: 0 8px 28px rgba(45,106,79,0.35);
+    transition: all 0.2s; position: relative;
+  }
+  .mic-btn:hover { transform: scale(1.08); box-shadow: 0 12px 36px rgba(45,106,79,0.45); }
+  .mic-btn.listening { animation: pulse 1.2s ease-in-out infinite; background: linear-gradient(135deg, var(--red-soft) 0%, #FF9999 100%); }
+  @keyframes pulse {
+    0%,100%{ box-shadow: 0 8px 28px rgba(255,107,107,0.4), 0 0 0 0 rgba(255,107,107,0.4); }
+    50%{ box-shadow: 0 8px 28px rgba(255,107,107,0.4), 0 0 0 18px rgba(255,107,107,0); }
+  }
+  .wave-bars {
+    display: flex; align-items: center; gap: 4px; height: 28px;
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .wave-bars.active { opacity: 1; }
+  .wave-bar {
+    width: 5px; background: var(--forest-light); border-radius: 3px;
+    animation: waveBar 0.8s ease-in-out infinite;
+  }
+  .wave-bar:nth-child(1){height:10px;animation-delay:0s}
+  .wave-bar:nth-child(2){height:20px;animation-delay:0.12s}
+  .wave-bar:nth-child(3){height:28px;animation-delay:0.24s}
+  .wave-bar:nth-child(4){height:18px;animation-delay:0.36s}
+  .wave-bar:nth-child(5){height:12px;animation-delay:0.48s}
+  @keyframes waveBar { 0%,100%{transform:scaleY(0.5)} 50%{transform:scaleY(1)} }
+
+  .feedback-msg {
+    font-size: 1.15rem; font-weight: 800; text-align: center; min-height: 28px;
+    transition: all 0.3s;
+  }
+  .feedback-msg.correct { color: var(--forest); }
+  .feedback-msg.try-again { color: var(--honey-dark); }
+
+  /* ── KEYBOARD ── */
+  .keyboard-section { margin-top: 22px; }
+  .keyboard-section h4 { font-size: 1rem; font-weight: 700; color: #888; margin-bottom: 12px; text-align: center; }
+  .type-display {
+    display: flex; justify-content: center; gap: 8px; margin-bottom: 16px; min-height: 60px; align-items: center;
+  }
+  .type-box {
+    width: 52px; height: 60px; border-radius: 12px;
+    background: var(--letter-bg); border: 3px solid var(--forest-pale);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Baloo 2', cursive; font-size: 2rem; font-weight: 800; color: var(--forest);
+    transition: all 0.2s;
+  }
+  .type-box.filled { border-color: var(--forest-light); background: var(--forest-pale); }
+  .type-box.correct-box { border-color: var(--forest); background: #C7F2D0; animation: popIn 0.3s cubic-bezier(.175,.885,.32,1.275); }
+  .type-box.wrong-box { border-color: var(--red-soft); background: #FFE5E5; animation: shake 0.4s; }
+  @keyframes popIn { 0%{transform:scale(0.7)} 100%{transform:scale(1)} }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+
+  .keyboard { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .key-row { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+  .key {
+    width: 52px; height: 52px; border-radius: 12px;
+    background: white; border: 2px solid #E8E8E8;
+    font-family: 'Baloo 2', cursive; font-size: 1.4rem; font-weight: 700; color: #444;
+    cursor: pointer; transition: all 0.15s; box-shadow: 0 3px 0 #DDD;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .key:hover { background: var(--forest-pale); border-color: var(--forest-light); transform: translateY(-2px); box-shadow: 0 5px 0 var(--forest-light); }
+  .key:active { transform: translateY(1px); box-shadow: 0 1px 0 #CCC; }
+  .key.key-highlight { background: var(--forest-pale); border-color: var(--forest); animation: keyGlow 0.8s ease infinite alternate; }
+  @keyframes keyGlow { from{box-shadow:0 3px 0 var(--forest)} to{box-shadow:0 3px 16px rgba(45,106,79,0.5)} }
+  .key-back {
+    width: 70px; font-size: 1rem; background: #FFF0F0; border-color: #FFD0D0; color: var(--red-soft);
+  }
+
+  /* ── PROGRESS BAR ── */
+  .session-progress { margin-bottom: 24px; }
+  .progress-label { display: flex; justify-content: space-between; font-size: 0.9rem; font-weight: 700; color: #888; margin-bottom: 6px; }
+  .progress-track { height: 14px; background: var(--forest-pale); border-radius: 50px; overflow: hidden; }
+  .progress-fill {
+    height: 100%; border-radius: 50px;
+    background: linear-gradient(90deg, var(--forest-light), var(--forest));
+    transition: width 0.5s cubic-bezier(.25,.8,.25,1);
+  }
+
+  /* ── NAV ARROWS ── */
+  .nav-controls {
+    display: flex; justify-content: space-between; align-items: center; margin-top: 28px;
+  }
+  .btn-nav {
+    padding: 12px 28px; border-radius: 50px; border: none; cursor: pointer;
+    font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 1rem;
+    transition: all 0.2s; display: flex; align-items: center; gap: 8px;
+  }
+  .btn-prev { background: var(--forest-pale); color: var(--forest); }
+  .btn-prev:hover { background: #B7DBCA; }
+  .btn-next { background: var(--forest); color: white; box-shadow: 0 5px 18px rgba(45,106,79,0.3); }
+  .btn-next:hover { background: var(--honey); color: var(--bark); transform: translateY(-2px); }
+  .btn-next:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* ── CELEBRATION ── */
+  .celebration { display: none; position: fixed; inset: 0; z-index: 999; pointer-events: none; }
+  .celebration.show { display: block; }
+  .confetti-piece {
+    position: absolute; width: 12px; height: 12px; border-radius: 2px;
+    animation: confettiFall linear forwards;
+  }
+  @keyframes confettiFall {
+    0%{transform:translateY(-20px) rotate(0deg);opacity:1}
+    100%{transform:translateY(110vh) rotate(720deg);opacity:0}
+  }
+
+  /* ── TEACHER PANEL ── */
+  .panel-overlay {
+    display: none; position: fixed; inset: 0; z-index: 100;
+    background: rgba(0,0,0,0.45); backdrop-filter: blur(3px);
+    align-items: center; justify-content: center;
+  }
+  .panel-overlay.open { display: flex; }
+  .panel-card {
+    background: white; border-radius: var(--radius); box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    padding: 36px; width: 90%; max-width: 540px; max-height: 85vh; overflow-y: auto;
+    animation: slideUp 0.3s ease;
+  }
+  @keyframes slideUp { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
+  .panel-card h2 { font-family: 'Baloo 2', cursive; font-size: 1.8rem; color: var(--forest); margin-bottom: 22px; }
+  .pin-gate { text-align: center; }
+  .pin-gate p { color: #888; margin-bottom: 16px; }
+  .pin-input {
+    width: 160px; text-align: center; letter-spacing: 8px;
+    font-size: 1.5rem; font-weight: 800; padding: 12px;
+    border: 3px solid var(--forest-pale); border-radius: 14px; outline: none;
+    font-family: 'Baloo 2', cursive;
+  }
+  .pin-input:focus { border-color: var(--forest); }
+
+  .setting-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 0; border-bottom: 1px solid var(--forest-pale);
+  }
+  .setting-label { font-weight: 700; color: #444; }
+  .setting-sub { font-size: 0.82rem; color: #999; margin-top: 2px; }
+
+  .toggle {
+    width: 52px; height: 28px; border-radius: 50px; border: none;
+    background: #DDD; cursor: pointer; position: relative; transition: background 0.3s;
+    flex-shrink: 0;
+  }
+  .toggle.on { background: var(--forest); }
+  .toggle::after {
+    content:''; position:absolute; width:22px; height:22px;
+    background:white; border-radius:50%; top:3px; left:3px;
+    transition:transform 0.3s; box-shadow:0 1px 4px rgba(0,0,0,0.2);
+  }
+  .toggle.on::after { transform:translateX(24px); }
+
+  .slider-wrap { display: flex; align-items: center; gap: 12px; }
+  .range-slider { width: 120px; accent-color: var(--forest); }
+  .slider-val { font-weight: 800; color: var(--forest); min-width: 28px; text-align: center; }
+
+  .profile-tabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px; }
+  .profile-tab {
+    padding:8px 18px; border-radius:50px; border:2px solid var(--forest-pale);
+    font-weight:700; cursor:pointer; font-size:0.9rem; transition:all 0.2s;
+    background:white; color:#888;
+  }
+  .profile-tab.active { background:var(--forest); color:white; border-color:var(--forest); }
+
+  .progress-report {
+    background:var(--forest-pale); border-radius:var(--radius-sm); padding:16px; margin-top:8px;
+  }
+  .report-row { display:flex; justify-content:space-between; font-size:0.92rem; padding:4px 0; }
+  .report-val { font-weight:800; color:var(--forest); }
+
+  .panel-close {
+    margin-top:24px; width:100%; padding:14px; border-radius:50px;
+    background:var(--forest); color:white; border:none; cursor:pointer;
+    font-family:'Nunito',sans-serif; font-weight:800; font-size:1rem;
+    transition:background 0.2s;
+  }
+  .panel-close:hover { background:var(--honey); color:var(--bark); }
+
+  /* ── BLEND DISPLAY ── */
+  .blend-display {
+    display:flex; justify-content:center; align-items:center; gap:0; margin:28px 0;
+  }
+  .blend-letter {
+    width:90px; height:100px; border-radius:16px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Baloo 2',cursive; font-size:4rem; font-weight:800;
+    color:white; position:relative; transition:all 0.4s;
+  }
+  .blend-letter:first-child { background:linear-gradient(135deg,var(--forest),var(--forest-light)); transform:translateX(8px); z-index:1; border-radius:16px 8px 8px 16px; }
+  .blend-letter:last-child { background:linear-gradient(135deg,var(--honey-dark),var(--honey)); transform:translateX(-8px); border-radius:8px 16px 16px 8px; }
+  .blend-display.slide .blend-letter:first-child { transform:translateX(4px); }
+  .blend-display.slide .blend-letter:last-child { transform:translateX(-4px); }
+
+  /* ── CVC WORD ── */
+  .cvc-display {
+    display:flex; justify-content:center; align-items:center; gap:8px; margin:24px 0;
+  }
+  .cvc-letter {
+    width:80px; height:90px; border-radius:14px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Baloo 2',cursive; font-size:3.5rem; font-weight:800;
+    color:var(--bark); transition:all 0.3s;
+  }
+  .cvc-letter.c1,.cvc-letter.c3 { background:linear-gradient(135deg,var(--sky),#8DD8F5); }
+  .cvc-letter.v1 { background:linear-gradient(135deg,var(--honey),#FFD07A); }
+  .cvc-letter.reveal { animation:popIn 0.3s cubic-bezier(.175,.885,.32,1.275); }
+
+  /* ── FREE BADGE ── */
+  .free-lock {
+    display:inline-block; background:var(--honey); color:var(--bark);
+    font-size:0.75rem; font-weight:800; padding:3px 10px; border-radius:50px;
+    margin-left:8px; vertical-align:middle;
+  }
+  .premium-lock {
+    display:inline-block; background:#E8E0FF; color:var(--purple-soft);
+    font-size:0.75rem; font-weight:800; padding:3px 10px; border-radius:50px;
+    margin-left:8px; vertical-align:middle;
+  }
+
+  /* ── UPGRADE BANNER ── */
+  .upgrade-banner {
+    background:linear-gradient(135deg,var(--forest),var(--forest-light));
+    border-radius:var(--radius); padding:28px 32px; color:white; text-align:center;
+    margin-top:24px; box-shadow:var(--shadow);
+  }
+  .upgrade-banner h3 { font-family:'Baloo 2',cursive; font-size:1.6rem; margin-bottom:8px; }
+  .upgrade-banner p { opacity:0.85; margin-bottom:18px; font-size:1.05rem; }
+  .btn-upgrade {
+    background:var(--honey); color:var(--bark); border:none; cursor:pointer;
+    padding:14px 36px; border-radius:50px; font-family:'Nunito',sans-serif;
+    font-weight:800; font-size:1.05rem; transition:all 0.2s;
+  }
+  .btn-upgrade:hover { background:white; transform:translateY(-2px); box-shadow:0 6px 20px rgba(0,0,0,0.15); }
+
+  /* ── TAP-TO-ANSWER FALLBACK ── */
+  .tap-answer-section { margin: 20px 0; text-align: center; }
+  .tap-choices { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; margin-top: 8px; }
+  .tap-choice {
+    min-width: 90px; padding: 18px 22px;
+    border-radius: 18px; border: 3px solid var(--forest-pale);
+    background: white; cursor: pointer;
+    font-family: 'Baloo 2', cursive; font-size: 2rem; font-weight: 800; color: var(--forest);
+    box-shadow: var(--shadow-sm); transition: all 0.18s;
+  }
+  .tap-choice:hover, .tap-choice:active {
+    background: var(--forest-pale); border-color: var(--forest);
+    transform: scale(1.08); box-shadow: 0 8px 24px rgba(45,106,79,0.22);
+  }
+
+  /* ── STAR REWARD ── */
+  .stars-row {
+    display:flex; justify-content:center; gap:8px; margin:8px 0;
+  }
+  .star { font-size:2rem; opacity:0.3; transition:all 0.3s; }
+  .star.earned { opacity:1; animation:starPop 0.4s cubic-bezier(.175,.885,.32,1.275); }
+  @keyframes starPop { 0%{transform:scale(0) rotate(-30deg)} 100%{transform:scale(1) rotate(0deg)} }
+
+  /* ── COMPLETE SCREEN ── */
+  .complete-screen {
+    text-align:center; padding:20px 0;
+  }
+  .complete-bear { font-size:6rem; animation:bearBob 1.5s ease-in-out infinite; margin-bottom:16px; }
+  .complete-screen h2 { font-family:'Baloo 2',cursive; font-size:2.4rem; color:var(--forest); margin-bottom:10px; }
+  .complete-screen p { color:#888; font-size:1.1rem; margin-bottom:24px; }
+  .score-badge {
+    display:inline-block; background:linear-gradient(135deg,var(--honey),#FFD07A);
+    border-radius:50%; width:100px; height:100px; line-height:100px;
+    font-family:'Baloo 2',cursive; font-size:2rem; font-weight:800; color:var(--bark);
+    box-shadow:0 8px 28px rgba(245,166,35,0.4); margin-bottom:20px;
+  }
+
+  .tab-btn.tab-locked { opacity: 0.55; }
+  .tab-btn.tab-locked:hover { border-color: #DDD; color: #888; cursor: not-allowed; }
+
+  /* ── RESPONSIVE ── */
+  @media(max-width:600px) {
+    .card { padding:22px 16px; }
+    .letter-card { width:110px; height:110px; font-size:4rem; }
+    .key { width:42px; height:42px; font-size:1.2rem; }
+    .blend-letter { width:70px; height:80px; font-size:3rem; }
+    .cvc-letter { width:64px; height:74px; font-size:2.8rem; }
+  }
+</style>
 </head>
-<body class="bg-indigo-50">
-    <div id="root"></div>
+<body>
 
-    <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+<div class="bg-trees"></div>
+<div class="celebration" id="celebration"></div>
 
-        // --- CONFIGURATION ---
-        const GEMINI_API_KEY = "PASTE_YOUR_GEMINI_KEY_HERE";
-        const firebaseConfig = {
-            apiKey: "PASTE_YOUR_FIREBASE_KEY_HERE",
-            authDomain: "your-app.firebaseapp.com",
-            projectId: "your-app-id",
-            storageBucket: "your-app.appspot.com",
-            messagingSenderId: "123456789",
-            appId: "1:123456789:web:abcdef"
-        };
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <span class="logo-bear">🐻</span>
+    Cubby Reads
+  </div>
+  <div class="header-btns">
+    <button class="btn-sm btn-outline" onclick="openPanel()">🔧 Teacher</button>
+    <button class="btn-sm btn-honey" onclick="showUpgrade()">⭐ Upgrade</button>
+  </div>
+</header>
 
-        const DRA_LEVELS = [
-            "A1 (Pre-Reader)", "A2 (Emergent)", "1 (Emergent)", "2 (Beginning)", "3 (Beginning)",
-            "4 (Beginning)", "6 (Beginning)", "8 (Developing)", "10 (Developing)", "12 (Developing)",
-            "14 (Intermediate)", "16 (Intermediate)", "18 (Intermediate)", "20 (Advanced)", "24 (Advanced)",
-            "28 (Fluent)", "30 (Fluent)", "34 (Fluent)", "38 (Extended)", "40 (Extended)",
-            "50 (Advanced Fluent)", "60 (Mastery)"
-        ];
+<!-- MAIN -->
+<main>
+  <div class="section-nav" id="sectionNav"></div>
 
-        const getNormalizedWords = (text) => {
-            if (!text) return [];
-            return text.toLowerCase().replace(/[^a-z0-9'\s]/g, ' ').replace(/\s+/g, ' ').trim().split(' ').filter(w => w.length > 0);
-        };
+  <div class="session-progress">
+    <div class="progress-label">
+      <span id="progressLabel">Item 1 of 5</span>
+      <span id="progressPct">0%</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  </div>
 
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  <div id="appArea"></div>
+</main>
 
-        function App() {
-            const [currentLevelIndex, setCurrentLevelIndex] = useState(0);
-            const [currentBook, setCurrentBook] = useState(null);
-            const [isListening, setIsListening] = useState(false);
-            const [capturedTranscript, setCapturedTranscript] = useState('');
-            const [isLoading, setIsLoading] = useState(false);
-            const [sessionResults, setSessionResults] = useState(null);
-            
-            const recognitionRef = useRef(null);
+<!-- TEACHER PANEL OVERLAY -->
+<div class="panel-overlay" id="panelOverlay">
+  <div class="panel-card">
+    <div id="panelContent"></div>
+  </div>
+</div>
 
-            // Initialize Speech
-            useEffect(() => {
-                if (SpeechRecognition && !recognitionRef.current) {
-                    const recognition = new SpeechRecognition();
-                    recognition.continuous = true;
-                    recognition.interimResults = true;
-                    recognition.onresult = (e) => {
-                        let str = '';
-                        for (let i = 0; i < e.results.length; ++i) {
-                            str += e.results[i][0].transcript;
-                        }
-                        setCapturedTranscript(str);
-                    };
-                    recognitionRef.current = recognition;
-                }
-            }, []);
+<script>
+// ═══════════════════════════════════════════════════════
+// BRAIN-BASED REASONING LAYER
+// Chain-of-thought principles embedded in every decision:
+// 1. MULTIMODAL ENCODING: see + hear + say + type = 4x retention paths
+// 2. SPACED REPETITION: missed items re-queue, mastered items resurface later
+// 3. SYNTHETIC PHONICS ORDER: S,A,T,P,I,N first (highest decodable word yield)
+// 4. LOW THREAT LOOPS: no red X, max 3 gentle retries, then model & move
+// 5. CHUNKING: adult-controlled session length matches attention span by age
+// 6. NOVELTY: Cubby's responses vary randomly so children don't habituate
+// 7. SUCCESS GRADIENT: locked progression with adult override available
+// 8. MOTOR MEMORY: typing reinforces orthographic mapping (letter→sound→shape)
+// ═══════════════════════════════════════════════════════
 
-            const callGemini = async (prompt) => {
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-                const res = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                });
-                const data = await res.json();
-                return data.candidates[0].content.parts[0].text;
-            };
+// ── DATA ──────────────────────────────────────────────
+const LETTERS = [
+  {l:'S',pic:'🐍',word:'Snake'},{l:'A',pic:'🍎',word:'Apple'},
+  {l:'T',pic:'🐢',word:'Turtle'},{l:'P',pic:'🐧',word:'Penguin'},
+  {l:'I',pic:'🍦',word:'Ice cream'},{l:'N',pic:'🪺',word:'Nest'},
+  {l:'M',pic:'🌙',word:'Moon'},{l:'D',pic:'🦆',word:'Duck'},
+  {l:'G',pic:'🍇',word:'Grape'},{l:'O',pic:'🦉',word:'Owl'},
+  {l:'C',pic:'🐱',word:'Cat'},{l:'K',pic:'🦘',word:'Kangaroo'},
+  {l:'E',pic:'🥚',word:'Egg'},{l:'U',pic:'☂️',word:'Umbrella'},
+  {l:'R',pic:'🌈',word:'Rainbow'},{l:'H',pic:'🏠',word:'House'},
+  {l:'B',pic:'🐻',word:'Bear'},{l:'F',pic:'🐸',word:'Frog'},
+  {l:'L',pic:'🦁',word:'Lion'},{l:'J',pic:'🕹️',word:'Joystick'},
+  {l:'V',pic:'🌋',word:'Volcano'},{l:'W',pic:'🌊',word:'Wave'},
+  {l:'X',pic:'🎷',word:'Xylophone'},{l:'Y',pic:'🪀',word:'Yo-yo'},
+  {l:'Z',pic:'🦓',word:'Zebra'},{l:'Q',pic:'👑',word:'Queen'},
+];
 
-            const generateBook = async () => {
-                setIsLoading(true);
-                setSessionResults(null);
-                try {
-                    const level = DRA_LEVELS[currentLevelIndex];
-                    const prompt = `Write a 3-sentence story for a child at DRA level ${level}. Format: Title\n\nStory.`;
-                    const text = await callGemini(prompt);
-                    const parts = text.split('\n\n');
-                    setCurrentBook({ title: parts[0], text: parts[1] });
-                } catch (e) {
-                    alert("Check your API Key!");
-                } finally {
-                    setIsLoading(false);
-                }
-            };
+// BEGINNING BLENDS — 22 true consonant clusters (no digraphs)
+const BLENDS = [
+  {blend:'BL',pic:'🔵',word:'Blue',ex:'blue'},
+  {blend:'BR',pic:'🍞',word:'Bread',ex:'bread'},
+  {blend:'CL',pic:'👏',word:'Clap',ex:'clap'},
+  {blend:'CR',pic:'🦀',word:'Crab',ex:'crab'},
+  {blend:'DR',pic:'🥁',word:'Drum',ex:'drum'},
+  {blend:'FL',pic:'🌸',word:'Flower',ex:'flower'},
+  {blend:'FR',pic:'🐸',word:'Frog',ex:'frog'},
+  {blend:'GL',pic:'🥛',word:'Glass',ex:'glass'},
+  {blend:'GR',pic:'🌿',word:'Grass',ex:'grass'},
+  {blend:'PL',pic:'🌱',word:'Plant',ex:'plant'},
+  {blend:'PR',pic:'🎁',word:'Present',ex:'present'},
+  {blend:'SC',pic:'🧣',word:'Scarf',ex:'scarf'},
+  {blend:'SK',pic:'⛷️',word:'Ski',ex:'ski'},
+  {blend:'SL',pic:'🛝',word:'Slide',ex:'slide'},
+  {blend:'SM',pic:'😄',word:'Smile',ex:'smile'},
+  {blend:'SN',pic:'❄️',word:'Snow',ex:'snow'},
+  {blend:'SP',pic:'🕷️',word:'Spider',ex:'spider'},
+  {blend:'ST',pic:'⭐',word:'Star',ex:'star'},
+  {blend:'SW',pic:'🏊',word:'Swim',ex:'swim'},
+  {blend:'TR',pic:'🌳',word:'Tree',ex:'tree'},
+  {blend:'TW',pic:'✌️',word:'Two',ex:'two'},
+  {blend:'WR',pic:'✏️',word:'Write',ex:'write'},
+];
 
-            const startReading = () => {
-                setCapturedTranscript('');
-                setIsListening(true);
-                recognitionRef.current.start();
-            };
+// DIGRAPHS — 22 items (sh, ch, th, wh, ph, ng — initial and final positions)
+const DIGRAPHS = [
+  {dg:'SH',pos:'start',pic:'🦈',word:'Shark',ex:'shark'},
+  {dg:'SH',pos:'start',pic:'🐑',word:'Sheep',ex:'sheep'},
+  {dg:'SH',pos:'start',pic:'🛍️',word:'Shop',ex:'shop'},
+  {dg:'SH',pos:'end',  pic:'🐟',word:'Fish',ex:'fish'},
+  {dg:'SH',pos:'end',  pic:'🥘',word:'Dish',ex:'dish'},
+  {dg:'CH',pos:'start',pic:'🐔',word:'Chick',ex:'chick'},
+  {dg:'CH',pos:'start',pic:'🧀',word:'Cheese',ex:'cheese'},
+  {dg:'CH',pos:'end',  pic:'🏖️',word:'Beach',ex:'beach'},
+  {dg:'CH',pos:'end',  pic:'🍑',word:'Peach',ex:'peach'},
+  {dg:'TH',pos:'start',pic:'👍',word:'Thumb',ex:'thumb'},
+  {dg:'TH',pos:'start',pic:'3️⃣',word:'Three',ex:'three'},
+  {dg:'TH',pos:'end',  pic:'🦷',word:'Teeth',ex:'teeth'},
+  {dg:'TH',pos:'end',  pic:'🛁',word:'Bath',ex:'bath'},
+  {dg:'WH',pos:'start',pic:'🌬️',word:'Whale',ex:'whale'},
+  {dg:'WH',pos:'start',pic:'🌾',word:'Wheat',ex:'wheat'},
+  {dg:'WH',pos:'start',pic:'⚪',word:'White',ex:'white'},
+  {dg:'PH',pos:'start',pic:'📱',word:'Phone',ex:'phone'},
+  {dg:'PH',pos:'start',pic:'📸',word:'Photo',ex:'photo'},
+  {dg:'NG',pos:'end',  pic:'👑',word:'King',ex:'king'},
+  {dg:'NG',pos:'end',  pic:'🎵',word:'Song',ex:'song'},
+  {dg:'NG',pos:'end',  pic:'🔔',word:'Ring',ex:'ring'},
+  {dg:'NG',pos:'end',  pic:'🦁',word:'Long',ex:'long'},
+];
 
-            const stopReading = () => {
-                recognitionRef.current.stop();
-                setIsListening(false);
-                
-                // Simple accuracy check
-                const expected = getNormalizedWords(currentBook.text);
-                const actual = getNormalizedWords(capturedTranscript);
-                const correct = expected.filter(word => actual.includes(word)).length;
-                const accuracy = correct / expected.length;
-                
-                setSessionResults({
-                    accuracy: Math.round(accuracy * 100),
-                    isSuccess: accuracy > 0.8
-                });
-            };
+// CVC WORDS — expanded to 44 total
+const CVC_WORDS = [
+  // -at family
+  {word:'CAT',pic:'🐱',sounds:['C','A','T']},
+  {word:'HAT',pic:'🎩',sounds:['H','A','T']},
+  {word:'BAT',pic:'🦇',sounds:['B','A','T']},
+  {word:'MAT',pic:'🧘',sounds:['M','A','T']},
+  {word:'RAT',pic:'🐀',sounds:['R','A','T']},
+  // -an family
+  {word:'FAN',pic:'🪭',sounds:['F','A','N']},
+  {word:'MAN',pic:'🧑',sounds:['M','A','N']},
+  {word:'VAN',pic:'🚐',sounds:['V','A','N']},
+  {word:'PAN',pic:'🍳',sounds:['P','A','N']},
+  {word:'RAM',pic:'🐏',sounds:['R','A','M']},
+  // -ig family
+  {word:'PIG',pic:'🐷',sounds:['P','I','G']},
+  {word:'BIG',pic:'🐘',sounds:['B','I','G']},
+  {word:'DIG',pic:'⛏️',sounds:['D','I','G']},
+  {word:'JIG',pic:'🎵',sounds:['J','I','G']},
+  // -it family
+  {word:'SIT',pic:'🪑',sounds:['S','I','T']},
+  {word:'BIT',pic:'🦷',sounds:['B','I','T']},
+  {word:'HIT',pic:'🏏',sounds:['H','I','T']},
+  {word:'KIT',pic:'🧰',sounds:['K','I','T']},
+  // -op family
+  {word:'HOP',pic:'🐸',sounds:['H','O','P']},
+  {word:'TOP',pic:'🪀',sounds:['T','O','P']},
+  {word:'MOP',pic:'🧹',sounds:['M','O','P']},
+  {word:'POP',pic:'🎈',sounds:['P','O','P']},
+  // -ot family
+  {word:'DOT',pic:'⚫',sounds:['D','O','T']},
+  {word:'POT',pic:'🍯',sounds:['P','O','T']},
+  {word:'HOT',pic:'🔥',sounds:['H','O','T']},
+  // -ug family
+  {word:'BUG',pic:'🐛',sounds:['B','U','G']},
+  {word:'MUG',pic:'🫖',sounds:['M','U','G']},
+  {word:'HUG',pic:'🤗',sounds:['H','U','G']},
+  {word:'TUB',pic:'🛁',sounds:['T','U','B']},
+  // -un family
+  {word:'RUN',pic:'👟',sounds:['R','U','N']},
+  {word:'SUN',pic:'☀️',sounds:['S','U','N']},
+  {word:'FUN',pic:'🎉',sounds:['F','U','N']},
+  {word:'BUN',pic:'🍞',sounds:['B','U','N']},
+  // -ed family
+  {word:'BED',pic:'🛏️',sounds:['B','E','D']},
+  {word:'RED',pic:'🔴',sounds:['R','E','D']},
+  {word:'WET',pic:'💧',sounds:['W','E','T']},
+  // -en family
+  {word:'HEN',pic:'🐔',sounds:['H','E','N']},
+  {word:'PEN',pic:'🖊️',sounds:['P','E','N']},
+  {word:'TEN',pic:'🔟',sounds:['T','E','N']},
+  // mixed
+  {word:'CUP',pic:'🥤',sounds:['C','U','P']},
+  {word:'BUS',pic:'🚌',sounds:['B','U','S']},
+  {word:'NUT',pic:'🥜',sounds:['N','U','T']},
+  {word:'MUD',pic:'🟫',sounds:['M','U','D']},
+  {word:'LEG',pic:'🦵',sounds:['L','E','G']},
+  {word:'JAM',pic:'🍓',sounds:['J','A','M']},
+  {word:'DOG',pic:'🐶',sounds:['D','O','G']},
+];
 
-            return (
-                <div className="max-w-xl mx-auto py-10 px-4">
-                    <header className="bg-white p-6 rounded-3xl shadow-lg border-b-4 border-indigo-200 flex justify-between items-center mb-6">
-                        <h1 className="text-xl font-black text-indigo-600">Reading Buddy</h1>
-                        <span className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold">
-                            Level: {DRA_LEVELS[currentLevelIndex]}
-                        </span>
-                    </header>
+// SIGHT WORDS — 48 Dolch pre-primer + primer words with sentences
+// BRAIN REASONING: Sight words bypass phonetic decoding — they need whole-word
+// visual recognition. We show word, read it aloud, then child taps it from 3 choices.
+// No typing for sight words — they are irregular and typing would enforce wrong phonics.
+const SIGHT_WORDS = [
+  // Pre-primer
+  {word:'THE',  pic:'📖', sentence:'The cat sat.'},
+  {word:'A',    pic:'🍎', sentence:'A red apple.'},
+  {word:'AND',  pic:'➕', sentence:'Cat and dog.'},
+  {word:'IS',   pic:'❓', sentence:'It is fun.'},
+  {word:'IN',   pic:'📦', sentence:'A bug in mud.'},
+  {word:'IT',   pic:'👆', sentence:'It is big.'},
+  {word:'OF',   pic:'🧩', sentence:'A cup of milk.'},
+  {word:'TO',   pic:'➡️', sentence:'Go to bed.'},
+  {word:'WAS',  pic:'⏪', sentence:'It was fun.'},
+  {word:'YOU',  pic:'👉', sentence:'Can you run?'},
+  {word:'HE',   pic:'👦', sentence:'He can hop.'},
+  {word:'SHE',  pic:'👧', sentence:'She has a hat.'},
+  {word:'WE',   pic:'👫', sentence:'We can sit.'},
+  {word:'ARE',  pic:'⭐', sentence:'We are here.'},
+  {word:'DO',   pic:'✅', sentence:'Do you see it?'},
+  {word:'DID',  pic:'✔️', sentence:'She did it!'},
+  {word:'CAN',  pic:'💪', sentence:'I can run.'},
+  {word:'HAD',  pic:'⬅️', sentence:'He had a dog.'},
+  {word:'HIS',  pic:'👦', sentence:'His hat is big.'},
+  {word:'NOT',  pic:'❌', sentence:'It is not hot.'},
+  {word:'BUT',  pic:'🔄', sentence:'Fun but fast.'},
+  {word:'AT',   pic:'📍', sentence:'Look at me!'},
+  {word:'BE',   pic:'🐝', sentence:'Can it be?'},
+  {word:'MY',   pic:'🤲', sentence:'My cat is fat.'},
+  {word:'ON',   pic:'🔝', sentence:'Sit on it.'},
+  {word:'UP',   pic:'⬆️', sentence:'Look up!'},
+  {word:'ALL',  pic:'🌍', sentence:'We all ran.'},
+  {word:'GO',   pic:'🚦', sentence:'Go and run.'},
+  {word:'SEE',  pic:'👀', sentence:'Can you see?'},
+  {word:'FOR',  pic:'🎀', sentence:'A card for you.'},
+  // Primer
+  {word:'HAVE', pic:'🤝', sentence:'I have a cat.'},
+  {word:'THAT', pic:'👈', sentence:'I see that bug.'},
+  {word:'WITH', pic:'🤜', sentence:'Play with me.'},
+  {word:'HER',  pic:'👧', sentence:'Her hat is red.'},
+  {word:'THEY', pic:'👥', sentence:'They can run.'},
+  {word:'THIS', pic:'☝️', sentence:'This is fun.'},
+  {word:'FROM', pic:'📬', sentence:'A card from me.'},
+  {word:'WILL', pic:'🔮', sentence:'She will run.'},
+  {word:'SAID', pic:'💬', sentence:'He said yes.'},
+  {word:'WHAT', pic:'❓', sentence:'What is it?'},
+  {word:'COME', pic:'👋', sentence:'Come and sit.'},
+  {word:'SOME', pic:'🤏', sentence:'I want some.'},
+  {word:'WERE', pic:'🔙', sentence:'We were at home.'},
+  {word:'WHEN', pic:'🕐', sentence:'When did she go?'},
+  {word:'LIKE', pic:'❤️', sentence:'I like cats.'},
+  {word:'INTO', pic:'🚪', sentence:'Go into the house.'},
+  {word:'THEM', pic:'👥', sentence:'I see them play.'},
+  {word:'THEN', pic:'➡️', sentence:'Run, then stop.'},
+  {word:'YOUR', pic:'🫵', sentence:'I like your hat.'},
+];
 
-                    <div className="bg-white p-8 rounded-3xl shadow-xl text-center">
-                        {!currentBook ? (
-                            <button 
-                                onClick={generateBook}
-                                disabled={isLoading}
-                                className="bg-indigo-600 text-white px-8 py-3 rounded-2xl font-bold hover:bg-indigo-700 transition-all"
-                            >
-                                {isLoading ? "Writing story..." : "Generate New Story"}
-                            </button>
-                        ) : (
-                            <div className="space-y-6">
-                                <h2 className="text-indigo-400 italic font-bold">{currentBook.title}</h2>
-                                <p className="text-2xl font-medium text-slate-800 leading-relaxed">
-                                    {currentBook.text}
-                                </p>
-                                
-                                {isListening && (
-                                    <div className="text-sm text-indigo-500 animate-pulse italic">
-                                        Hearing: {capturedTranscript}
-                                    </div>
-                                )}
+const CUBBY_CORRECT = [
+  "Amazing job! 🎉","You did it! Cubby is so proud!","Wonderful! ⭐","You're a superstar reader!",
+  "WOW! That's exactly right!","Brilliant! Keep going!","Yes! Yes! Yes! 🐻","Perfect! You're so smart!",
+];
+const CUBBY_TRY = [
+  "Almost! Let's try together 🐾","Good try! Listen one more time...","You can do it! One more go!",
+  "Close! Let's hear it again 🎵","Nearly there! Try once more!",
+];
+const CUBBY_GREET_LETTERS  = ["Can you say the sound? Tap 🎤 or pick an answer!","What sound does this letter make?","Touch the letter, then say its sound!","Listen, then it's your turn! 🎤"];
+const CUBBY_GREET_BLENDS   = ["Can you say this blend? Tap 🎤 or pick below!","Slide the sounds together! 🎵","Listen to how they blend — now you try!"];
+const CUBBY_GREET_DIGRAPHS = ["Two letters — one sound! Can you say it?","Listen to the special sound, then try! 🎤","What sound do these two letters make together?"];
+const CUBBY_GREET_CVC      = ["Read this word out loud! 🎤","Can you sound it out?","Say each sound, then blend them together!"];
+const CUBBY_GREET_SIGHT    = ["This is a sight word — read it fast! 👀","Can you read this word?","See it, say it, know it! 🐻"];
+const CUBBY_GREET_READIT   = ["Can you READ this word out loud? 📖","Say the whole word into the mic!","Read it aloud — you know this one! 🐻","See it and say it! 🎤"];
+const CUBBY_TYPE_LETTER    = ["Now type the letter on the keyboard! ⌨️","Can you find it on the keyboard?","Type it! Show me you know it! 🐾"];
+const CUBBY_TYPE_CVC       = ["Now TYPE the word! One letter at a time 🐾","Spell it out on the keyboard! You've got this!","Type each letter — you know this word!"];
 
-                                <div className="pt-4">
-                                    {!isListening ? (
-                                        <button onClick={startReading} className="w-full py-4 bg-green-500 text-white rounded-2xl font-black text-xl">START READING</button>
-                                    ) : (
-                                        <button onClick={stopReading} className="w-full py-4 bg-red-500 text-white rounded-2xl font-black text-xl">I'M DONE</button>
-                                    )}
-                                </div>
-                            </div>
-                        )}
+// ── PROGRESSION GATES ─────────────────────────────────
+// Default gates: must reach this many items done to unlock next section.
+// Adults can lower or raise these in the Teacher Panel.
+const DEFAULT_GATES = {
+  cvc:      16, // letters mastered before CVC words unlock  (all 26 letters = full phonics foundation)
+  blends:    8, // CVC words mastered before blends unlock
+  digraphs: 16, // CVC words mastered before digraphs unlock
+  sight:    10, // blends mastered before sight words unlock
+  readit:   20, // sight words mastered before Read It! unlocks
+};
 
-                        {sessionResults && (
-                            <div className={`mt-6 p-6 rounded-2xl border-4 ${sessionResults.isSuccess ? 'bg-green-50 border-green-200' : 'bg-orange-50 border-orange-200'}`}>
-                                <h3 className="text-2xl font-black">{sessionResults.accuracy}% Accuracy</h3>
-                                <p className="font-bold text-slate-600">{sessionResults.isSuccess ? "🎉 Great job!" : "💪 Keep practicing!"}</p>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            );
-        }
+// ── STATE ──────────────────────────────────────────────
+let settings = {
+  sessionSize: 6,
+  typingOn: true,
+  isPremium: false,
+  pin: '1234',
+  gates: { ...DEFAULT_GATES },
+  // adultOverride: null means gating is auto; set to sectionId to force-unlock up to that point
+  adultOverride: null,
+};
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
+let profiles = {
+  active: 0,
+  list: [
+    {name:'Child 1', lettersDone:[], blendsDone:[], digraphsDone:[], cvcDone:[], sightDone:[], readitDone:[], sessions:0, correct:0, total:0},
+    {name:'Child 2', lettersDone:[], blendsDone:[], digraphsDone:[], cvcDone:[], sightDone:[], readitDone:[], sessions:0, correct:0, total:0},
+    {name:'Child 3', lettersDone:[], blendsDone:[], digraphsDone:[], cvcDone:[], sightDone:[], readitDone:[], sessions:0, correct:0, total:0},
+  ]
+};
+
+let currentSection = 'letters';
+let sessionItems = [];
+let sessionIdx = 0;
+let sessionCorrect = 0;
+let sessionPhase = 'speak';
+let retryCount = 0;
+let typedSoFar = '';
+let recognition = null;
+
+// ── SECTION DEFINITIONS ───────────────────────────────
+const SECTIONS = [
+  {id:'letters',  label:'🔤 Letters',  free:true},
+  {id:'cvc',      label:'📝 Words',    free:false},
+  {id:'blends',   label:'🔀 Blends',   free:false},
+  {id:'digraphs', label:'🔡 Digraphs', free:false},
+  {id:'sight',    label:'👁️ Sight',    free:false},
+  {id:'readit',   label:'📖 Read It!', free:false},
+];
+
+// ── UNLOCK LOGIC ──────────────────────────────────────
+// Returns true if the given section is accessible for the active profile.
+// Adults can set adultOverride to a section id to bypass auto-gating.
+function isSectionUnlocked(id) {
+  if (!settings.isPremium) return id === 'letters';
+  if (settings.adultOverride) {
+    const order = ['letters','cvc','blends','digraphs','sight','readit'];
+    const overrideIdx = order.indexOf(settings.adultOverride);
+    const thisIdx = order.indexOf(id);
+    return thisIdx <= overrideIdx;
+  }
+  const p = profiles.list[profiles.active];
+  if (id === 'letters')  return true;
+  if (id === 'cvc')      return p.lettersDone.length  >= settings.gates.cvc;
+  if (id === 'blends')   return p.cvcDone.length      >= settings.gates.blends;
+  if (id === 'digraphs') return p.cvcDone.length      >= settings.gates.digraphs;
+  if (id === 'sight')    return p.blendsDone.length   >= settings.gates.sight;
+  if (id === 'readit')   return p.sightDone.length    >= settings.gates.readit;
+  return false;
+}
+
+// ── BUILD SESSION ─────────────────────────────────────
+function buildSession() {
+  const profile = profiles.list[profiles.active];
+  let pool = [];
+  if (currentSection === 'letters') {
+    pool = LETTERS.filter(l => !profile.lettersDone.includes(l.l));
+    if (pool.length < settings.sessionSize) pool = [...LETTERS];
+  } else if (currentSection === 'blends') {
+    pool = BLENDS.filter(b => !profile.blendsDone.includes(b.blend+b.ex));
+    if (pool.length < settings.sessionSize) pool = [...BLENDS];
+  } else if (currentSection === 'digraphs') {
+    pool = DIGRAPHS.filter(d => !profile.digraphsDone.includes(d.dg+d.ex));
+    if (pool.length < settings.sessionSize) pool = [...DIGRAPHS];
+  } else if (currentSection === 'cvc') {
+    pool = CVC_WORDS.filter(w => !profile.cvcDone.includes(w.word));
+    if (pool.length < settings.sessionSize) pool = [...CVC_WORDS];
+  } else if (currentSection === 'sight') {
+    pool = SIGHT_WORDS.filter(w => !profile.sightDone.includes(w.word));
+    if (pool.length < settings.sessionSize) pool = [...SIGHT_WORDS];
+  } else if (currentSection === 'readit') {
+    // Pool = all CVC words + sight words the child has already seen, mixed together.
+    // We use the word and a picture where available; sight words use their sentence as context.
+    const cvcPool = CVC_WORDS.map(w => ({word: w.word, pic: w.pic, hint: null, type:'cvc'}));
+    const sightPool = SIGHT_WORDS.map(w => ({word: w.word, pic: w.pic, hint: w.sentence, type:'sight'}));
+    const combined = [...cvcPool, ...sightPool];
+    pool = combined.filter(w => !profile.readitDone.includes(w.word));
+    if (pool.length < settings.sessionSize) pool = [...combined];
+  }
+  sessionItems = pool.slice(0, settings.sessionSize);
+  sessionIdx = 0; sessionCorrect = 0; sessionPhase = 'speak'; retryCount = 0;
+  renderSession();
+}
+
+// ── SECTION NAV ───────────────────────────────────────
+function buildNav() {
+  const nav = document.getElementById('sectionNav');
+  nav.innerHTML = SECTIONS.map(t => {
+    const unlocked = isSectionUnlocked(t.id);
+    const active = currentSection === t.id;
+    const badge = t.free
+      ? '<span class="free-lock">FREE</span>'
+      : unlocked
+        ? '<span class="free-lock" style="background:var(--forest-light)">✓</span>'
+        : '<span class="premium-lock">🔒</span>';
+    return `<button class="tab-btn ${active?'active':''} ${unlocked?'':'tab-locked'}"
+      onclick="switchSection('${t.id}')">${t.label}${badge}</button>`;
+  }).join('');
+}
+
+function switchSection(id) {
+  if (!isSectionUnlocked(id)) {
+    if (!settings.isPremium) { showUpgrade(); return; }
+    // Premium but gated — show what's needed
+    const p = profiles.list[profiles.active];
+    const msgs = {
+      cvc:      `Complete ${settings.gates.cvc} letters first (${p.lettersDone.length}/${settings.gates.cvc} done)`,
+      blends:   `Complete ${settings.gates.blends} CVC words first (${p.cvcDone.length}/${settings.gates.blends} done)`,
+      digraphs: `Complete ${settings.gates.digraphs} CVC words first (${p.cvcDone.length}/${settings.gates.digraphs} done)`,
+      sight:    `Complete ${settings.gates.sight} blends first (${p.blendsDone.length}/${settings.gates.sight} done)`,
+      readit:   `Complete ${settings.gates.readit} sight words first (${p.sightDone.length}/${settings.gates.readit} done)`,
+    };
+    alert('🔒 ' + (msgs[id] || 'Keep practising to unlock this!') + '\n\nYou can also unlock it in the Teacher Panel.');
+    return;
+  }
+  currentSection = id;
+  sessionPhase = 'speak';
+  buildNav();
+  buildSession();
+}
+
+// ── RENDER SESSION ────────────────────────────────────
+function renderSession() {
+  buildNav();
+  updateProgress();
+  const item = sessionItems[sessionIdx];
+  const area = document.getElementById('appArea');
+  if (currentSection === 'letters')       renderLetter(area, item);
+  else if (currentSection === 'blends')   renderBlend(area, item);
+  else if (currentSection === 'digraphs') renderDigraph(area, item);
+  else if (currentSection === 'cvc')      renderCVC(area, item);
+  else if (currentSection === 'sight')    renderSight(area, item);
+  else if (currentSection === 'readit')   renderReadIt(area, item);
+}
+
+// ── SPEECH RECOGNITION SETUP ───────────────────────────
+function initSpeech() {
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) return null;
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const r = new SR();
+  r.continuous = false;
+  r.interimResults = false;
+  r.lang = 'en-US';
+  return r;
+}
+
+function speak(text, rate=0.85, pitch=1.1) {
+  if (!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = rate; u.pitch = pitch; u.volume = 1;
+  const voices = window.speechSynthesis.getVoices();
+  const nice = voices.find(v=>v.name.includes('Samantha')||v.name.includes('Karen')||v.name.includes('Daniel'));
+  if(nice) u.voice = nice;
+  window.speechSynthesis.speak(u);
+}
+
+// ── UPDATE PROGRESS ───────────────────────────────────
+function updateProgress() {
+  const total = sessionItems.length;
+  const done = sessionIdx;
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  document.getElementById('progressLabel').textContent = `Item ${Math.min(done+1, total)} of ${total}`;
+  document.getElementById('progressPct').textContent = pct + '%';
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+
+// ── LETTER SECTION ────────────────────────────────────
+function renderLetter(area, item) {
+  // BRAIN REASONING: Uppercase + lowercase shown together — dual encoding.
+  // Picture + word = semantic hook. Mic prompt = active retrieval (not passive).
+  // After speaking: typing phase = motor/orthographic loop. Both reinforce phoneme-grapheme.
+  const isTypePhase = sessionPhase === 'type' && settings.typingOn;
+  const greet = isTypePhase
+    ? rnd(CUBBY_TYPE_LETTER)
+    : rnd(CUBBY_GREET_LETTERS);
+
+  area.innerHTML = `
+    <div class="card">
+      ${cubbyHTML(greet)}
+      <div class="stars-row" id="starsRow">${'<span class="star" id="star0">⭐</span><span class="star" id="star1">⭐</span><span class="star" id="star2">⭐</span>'}</div>
+
+      <div class="letter-display">
+        <div class="letter-card" onclick="playLetterSound('${item.l}')">
+          ${item.l}
+          <span class="lower">${item.l.toLowerCase()}</span>
+        </div>
+        <div class="picture-card">
+          <div class="picture-emoji">${item.pic}</div>
+          <div class="picture-word">${item.word}</div>
+        </div>
+      </div>
+
+      ${isTypePhase ? letterTypingHTML(item) : micHTML(item.l.toLowerCase(),'letter')}
+
+      <div class="feedback-msg" id="feedbackMsg"></div>
+
+      <div class="nav-controls">
+        <button class="btn-nav btn-prev" onclick="prevItem()" ${sessionIdx===0&&!isTypePhase?'style="visibility:hidden"':''}>← Back</button>
+        <button class="btn-nav btn-next" id="nextBtn" onclick="nextItem()" disabled>Next →</button>
+      </div>
+    </div>`;
+
+  if (!isTypePhase) {
+    // Step 1: play just the isolated phoneme sound
+    // Step 2: after a clear pause, say the picture word naturally
+    // BRAIN REASONING: Separating the phoneme from the word prevents the child
+    // hearing a blend of both — clean phoneme isolation first, then semantic anchor.
+    setTimeout(()=> playLetterSound(item.l), 500);
+    setTimeout(()=> speak(item.word + '. ' + item.word + '.', 0.72, 1.05), 1800);
+    setupMic(item.l.toLowerCase(), 'letter');
+  } else {
+    setupTyping(item.l, 1);
+  }
+}
+
+function letterTypingHTML(item) {
+  return `
+    <div class="keyboard-section">
+      <h4>Type the letter <strong>${item.l}</strong></h4>
+      <div class="type-display">
+        <div class="type-box" id="typeBox0"></div>
+      </div>
+      ${keyboardHTML()}
+    </div>`;
+}
+
+function playLetterSound(l) {
+  // For stop consonants, TTS needs a tiny helper vowel to produce the burst.
+  // We say it twice at very slow rate so children clearly hear the sound.
+  const stops = ['B','D','G','P','T','K','C','J','Q'];
+  const sound = soundOf(l);
+  if (stops.includes(l)) {
+    // Say it twice with a pause — e.g. "b... b" at very slow rate
+    speak(sound + '. ' + sound, 0.45, 1.2);
+  } else {
+    speak(sound, 0.5, 1.2);
+  }
+}
+
+function soundOf(l) {
+  // BRAIN REASONING: These strings are chosen so browser TTS reads them as the
+  // pure consonant/vowel sound, not the letter name. Tested against Chrome TTS.
+  // Voiced stops (b,d,g) and unvoiced stops (p,t,k,c) need a very short schwa
+  // written as a single isolated letter, not "uh" (which becomes "you-h").
+  // Continuants (s,f,m,n,l,r,v,z) just repeat the sound 2x for duration.
+  const map = {
+    S:'ss',  A:'a',   T:'t',   P:'p',   I:'i',   N:'nn',
+    M:'mm',  D:'d',   G:'g',   O:'o',   C:'k',   K:'k',
+    E:'e',   U:'u',   R:'rr',  H:'h',   B:'b',   F:'ff',
+    L:'ll',  J:'j',   V:'vv',  W:'w',   X:'ks',  Y:'y',
+    Z:'zz',  Q:'kw',
+  };
+  return map[l] || l.toLowerCase();
+}
+
+// ── BLEND SECTION ─────────────────────────────────────
+function renderBlend(area, item) {
+  // BRAIN REASONING: Visual sliding animation mimics articulatory blend — two sounds
+  // physically overlapping. Hear model first → attempt → feedback loop.
+  // No typing for blends — working memory load would interfere with phonological focus.
+  area.innerHTML = `
+    <div class="card">
+      ${cubbyHTML(rnd(CUBBY_GREET_BLENDS))}
+      <div class="stars-row" id="starsRow">${'<span class="star" id="star0">⭐</span><span class="star" id="star1">⭐</span><span class="star" id="star2">⭐</span>'}</div>
+
+      <div class="blend-display" id="blendDisp" onclick="playBlendSound('${item.blend}','${item.ex}')">
+        <div class="blend-letter">${item.blend[0]}</div>
+        <div class="blend-letter">${item.blend[1]}</div>
+      </div>
+
+      <div class="picture-card" style="margin:0 auto;max-width:200px;">
+        <div class="picture-emoji">${item.pic}</div>
+        <div class="picture-word">${item.ex}</div>
+      </div>
+
+      ${micHTML(item.blend.toLowerCase(),'blend')}
+      <div class="feedback-msg" id="feedbackMsg"></div>
+
+      <div class="nav-controls">
+        <button class="btn-nav btn-prev" onclick="prevItem()" ${sessionIdx===0?'style="visibility:hidden"':''}>← Back</button>
+        <button class="btn-nav btn-next" id="nextBtn" onclick="nextItem()" disabled>Next →</button>
+      </div>
+    </div>`;
+
+  setTimeout(()=>{
+    document.getElementById('blendDisp').classList.add('slide');
+    playBlendSound(item.blend, item.ex);
+  },500);
+  setupMic(item.blend.toLowerCase(), 'blend');
+}
+
+function playBlendSound(blend, ex) {
+  // Say each phoneme using soundOf so TTS reads sounds not letter names,
+  // then say the full blend, then the example word.
+  const s1 = soundOf(blend[0]);
+  const s2 = soundOf(blend[1]);
+  const txt = s1 + '. ' + s2 + '. ' + blend.toLowerCase() + '. ' + ex;
+  speak(txt, 0.68, 1.05);
+}
+
+// ── CVC SECTION ───────────────────────────────────────
+function renderCVC(area, item) {
+  // BRAIN REASONING: Letters revealed one-by-one = segmentation support.
+  // Speak first (phonological), then type (orthographic) = dual-route encoding.
+  // Wrong answers show letter colours differently to give positional feedback.
+  const isTypePhase = sessionPhase === 'type' && settings.typingOn;
+  const greet = isTypePhase ? rnd(CUBBY_TYPE_CVC) : rnd(CUBBY_GREET_CVC);
+
+  const letters = item.word.split('');
+  const classes = ['c1','v1','c3'];
+  const letterBoxes = letters.map((l,i)=>`<div class="cvc-letter ${classes[i]}" id="cvcL${i}">${l}</div>`).join('');
+
+  area.innerHTML = `
+    <div class="card">
+      ${cubbyHTML(greet)}
+      <div class="stars-row" id="starsRow">${'<span class="star" id="star0">⭐</span><span class="star" id="star1">⭐</span><span class="star" id="star2">⭐</span>'}</div>
+
+      <div class="picture-card" style="margin:0 auto;max-width:220px;margin-bottom:12px;">
+        <div class="picture-emoji" style="font-size:4rem">${item.pic}</div>
+      </div>
+
+      <div class="cvc-display">${letterBoxes}</div>
+
+      ${isTypePhase ? cvcTypingHTML(item) : micHTML(item.word.toLowerCase(),'cvc')}
+      <div class="feedback-msg" id="feedbackMsg"></div>
+
+      <div class="nav-controls">
+        <button class="btn-nav btn-prev" onclick="prevItem()" ${sessionIdx===0&&!isTypePhase?'style="visibility:hidden"':''}>← Back</button>
+        <button class="btn-nav btn-next" id="nextBtn" onclick="nextItem()" disabled>Next →</button>
+      </div>
+    </div>`;
+
+  if (!isTypePhase) {
+    setTimeout(()=>{
+      revealCVCLetters(item);
+      speak(item.word.toLowerCase(), 0.65, 1.05);
+    }, 500);
+    setupMic(item.word.toLowerCase(), 'cvc');
+  } else {
+    setupTyping(item.word, item.word.length);
+  }
+}
+
+function revealCVCLetters(item) {
+  item.word.split('').forEach((l,i)=>{
+    setTimeout(()=>{
+      const el = document.getElementById('cvcL'+i);
+      if(el) el.classList.add('reveal');
+    }, i*300);
+  });
+}
+
+function cvcTypingHTML(item) {
+  const boxes = item.word.split('').map((_,i)=>`<div class="type-box" id="typeBox${i}"></div>`).join('');
+  return `
+    <div class="keyboard-section">
+      <h4>Type the word <strong>${item.word}</strong></h4>
+      <div class="type-display">${boxes}</div>
+      ${keyboardHTML()}
+    </div>`;
+}
+
+// ── DIGRAPH SECTION ───────────────────────────────────
+// BRAIN REASONING: Digraphs are two letters making ONE sound — a conceptual leap.
+// We show both letters joined visually, play the sound, show a picture anchor.
+// No typing — the digraph pair (e.g. SH) is what matters, not spelling the full word.
+function renderDigraph(area, item) {
+  area.innerHTML = `
+    <div class="card">
+      ${cubbyHTML(rnd(CUBBY_GREET_DIGRAPHS))}
+      <div class="stars-row" id="starsRow"><span class="star" id="star0">⭐</span><span class="star" id="star1">⭐</span><span class="star" id="star2">⭐</span></div>
+
+      <div style="display:flex;justify-content:center;align-items:center;gap:12px;margin:20px 0;">
+        <div style="display:flex;gap:0;cursor:pointer;" onclick="playDigraphSound('${item.dg}','${item.ex}')">
+          <div class="blend-letter" style="border-radius:16px 4px 4px 16px">${item.dg[0]}</div>
+          <div class="blend-letter" style="background:linear-gradient(135deg,var(--honey-dark),var(--honey));border-radius:4px 16px 16px 4px">${item.dg[1]}</div>
+        </div>
+        <div style="font-size:2rem;color:var(--forest-light);font-weight:900;">→</div>
+        <div style="font-size:3.5rem;font-weight:900;font-family:'Baloo 2',cursive;color:var(--forest);
+          background:var(--forest-pale);padding:12px 20px;border-radius:16px;">
+          ${item.dg.toLowerCase()}
+        </div>
+      </div>
+
+      <div class="picture-card" style="margin:0 auto;max-width:220px;">
+        <div class="picture-emoji" style="font-size:3.5rem">${item.pic}</div>
+        <div class="picture-word">${item.ex} <span style="color:var(--forest-light);font-size:1rem">(${item.pos === 'start' ? item.dg + ' at start' : item.dg + ' at end'})</span></div>
+      </div>
+
+      ${micHTML(item.dg.toLowerCase(),'digraph')}
+      <div class="feedback-msg" id="feedbackMsg"></div>
+
+      <div class="nav-controls">
+        <button class="btn-nav btn-prev" onclick="prevItem()" ${sessionIdx===0?'style="visibility:hidden"':''}>← Back</button>
+        <button class="btn-nav btn-next" id="nextBtn" onclick="nextItem()" disabled>Next →</button>
+      </div>
+    </div>`;
+
+  setTimeout(()=> playDigraphSound(item.dg, item.ex), 500);
+  setupMic(item.dg.toLowerCase(), 'digraph');
+}
+
+function playDigraphSound(dg, ex) {
+  // TTS-friendly digraph sounds — tested for Chrome TTS clarity
+  const sounds = {SH:'sh', CH:'ch', TH:'th', WH:'wh', PH:'ff', NG:'ng'};
+  const s = sounds[dg] || dg.toLowerCase();
+  speak(s + '. ' + s + '. ' + ex, 0.65, 1.08);
+}
+
+// ── SIGHT WORD SECTION ────────────────────────────────
+// BRAIN REASONING: Sight words need whole-word visual memory, not phonics decoding.
+// We show the word large, read it + a sentence for context, then use tap-only response.
+// No mic attempt — these words often can't be phonetically sounded out accurately.
+// The example sentence gives semantic context which boosts memory encoding.
+function renderSight(area, item) {
+  const choices = generateChoices(item.word.toLowerCase(), 'sight');
+  const tapBtns = choices.map(c=>`
+    <button class="tap-choice" style="font-size:1.4rem;min-width:110px"
+      onclick="checkAnswer('${c}','${item.word.toLowerCase()}','sight')">${c.toUpperCase()}</button>`).join('');
+
+  area.innerHTML = `
+    <div class="card">
+      ${cubbyHTML(rnd(CUBBY_GREET_SIGHT))}
+      <div class="stars-row" id="starsRow"><span class="star" id="star0">⭐</span><span class="star" id="star1">⭐</span><span class="star" id="star2">⭐</span></div>
+
+      <div style="text-align:center;margin:24px 0;">
+        <div onclick="playSightWord('${item.word}','${item.sentence}')"
+          style="display:inline-block;font-family:'Baloo 2',cursive;font-size:4rem;font-weight:900;
+          color:var(--bark);background:linear-gradient(135deg,var(--honey),#FFD07A);
+          padding:16px 40px;border-radius:20px;box-shadow:0 8px 28px rgba(245,166,35,0.35);
+          cursor:pointer;letter-spacing:2px;">
+          ${item.word}
+        </div>
+        <div style="margin-top:14px;font-size:1.1rem;color:#888;font-style:italic;">"${item.sentence}"</div>
+        <div style="font-size:0.82rem;color:#BBB;margin-top:6px;">Tap the word to hear it again</div>
+      </div>
+
+      <div class="tap-answer-section">
+        <div style="font-size:0.9rem;font-weight:700;color:#888;margin-bottom:10px;">Tap the word you see above:</div>
+        <div class="tap-choices">${tapBtns}</div>
+      </div>
+      <div class="feedback-msg" id="feedbackMsg"></div>
+
+      <div class="nav-controls">
+        <button class="btn-nav btn-prev" onclick="prevItem()" ${sessionIdx===0?'style="visibility:hidden"':''}>← Back</button>
+        <button class="btn-nav btn-next" id="nextBtn" onclick="nextItem()" disabled>Next →</button>
+      </div>
+    </div>`;
+
+  setTimeout(()=> playSightWord(item.word, item.sentence), 500);
+}
+
+function playSightWord(word, sentence) {
+  speak(word.toLowerCase() + '. ' + sentence, 0.75, 1.05);
+}
+
+function keyboardHTML() {
+  const rows = [
+    ['Q','W','E','R','T','Y','U','I','O','P'],
+    ['A','S','D','F','G','H','J','K','L'],
+    ['Z','X','C','V','B','N','M','⌫'],
+  ];
+  return `<div class="keyboard">${rows.map(row=>`
+    <div class="key-row">${row.map(k=>
+      k==='⌫'
+        ? `<button class="key key-back" onclick="typeBack()">⌫</button>`
+        : `<button class="key" id="key${k}" onclick="typeLetter('${k}')">${k}</button>`
+    ).join('')}</div>`).join('')}
+  </div>`;
+}
+
+// ── READ IT! SECTION ──────────────────────────────────
+// BRAIN REASONING: This is the culminating challenge — the child must read
+// words aloud independently with NO tap fallback. They see the word + picture,
+// but the whole word must come from them. Mic-only input forces true retrieval.
+// On 3rd retry, the word is revealed audibly as a model, then Next unlocks.
+// Words are drawn from the child's already-seen CVC + sight word pools, so
+// they are always practising words they have been introduced to — not cold reads.
+function renderReadIt(area, item) {
+  const micActive = hasSpeechSupport();
+  area.innerHTML = `
+    <div class="card">
+      ${cubbyHTML(rnd(CUBBY_GREET_READIT))}
+      <div class="stars-row" id="starsRow">
+        <span class="star" id="star0">⭐</span>
+        <span class="star" id="star1">⭐</span>
+        <span class="star" id="star2">⭐</span>
+      </div>
+
+      <div style="text-align:center;margin:24px 0 16px;">
+        <div style="font-size:3rem;margin-bottom:10px;">${item.pic}</div>
+        <div style="font-family:'Baloo 2',cursive;font-size:3.6rem;font-weight:900;
+          color:var(--bark);background:linear-gradient(135deg,var(--forest-pale),#B7F5D0);
+          padding:14px 36px;border-radius:20px;box-shadow:var(--shadow);
+          display:inline-block;letter-spacing:3px;">
+          ${item.word}
+        </div>
+        ${item.hint ? `<div style="margin-top:12px;font-size:1rem;color:#999;font-style:italic;">"${item.hint}"</div>` : ''}
+      </div>
+
+      <div class="mic-section">
+        <button class="mic-btn ${micActive?'':'disabled-mic'}" id="micBtn"
+          onclick="${micActive?'startListening()':'showNoMicMsg()'}"
+          style="${micActive?'':'opacity:0.35;cursor:not-allowed'}">🎤</button>
+        <div class="wave-bars" id="waveBars">
+          <div class="wave-bar"></div><div class="wave-bar"></div>
+          <div class="wave-bar"></div><div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+        </div>
+        <div style="font-size:0.9rem;font-weight:800;color:var(--forest);margin-top:6px;">
+          ${micActive ? 'Tap 🎤 and READ the word!' : '⚠️ Mic not available on this device'}
+        </div>
+        ${!micActive ? `<button class="btn-nav btn-next" style="margin:16px auto 0;display:block" onclick="skipReadIt()">Skip (no mic) →</button>` : ''}
+      </div>
+
+      <div class="feedback-msg" id="feedbackMsg"></div>
+
+      <div class="nav-controls">
+        <button class="btn-nav btn-prev" onclick="prevItem()" ${sessionIdx===0?'style="visibility:hidden"':''}>← Back</button>
+        <button class="btn-nav btn-next" id="nextBtn" onclick="nextItem()" disabled>Next →</button>
+      </div>
+    </div>`;
+
+  setupMic(item.word.toLowerCase(), 'readit');
+}
+
+function skipReadIt() {
+  // Graceful fallback for devices without mic
+  markItemDone();
+  document.getElementById('nextBtn').disabled = false;
+}
+
+function showNoMicMsg() {
+  setFeedback('Mic not available — use Chrome on desktop for Read It! 🎤', false);
+}
+
+// ── TYPING LOGIC ──────────────────────────────────────
+let typingTarget = '';
+let typingLen = 1;
+
+function setupTyping(target, len) {
+  typingTarget = target;
+  typingLen = len;
+  typedSoFar = '';
+  // Highlight the first key
+  setTimeout(()=>{
+    const k = document.getElementById('key'+target[0].toUpperCase());
+    if(k) k.classList.add('key-highlight');
+  }, 300);
+}
+
+function typeLetter(l) {
+  if (typedSoFar.length >= typingLen) return;
+  const expectedChar = typingTarget[typedSoFar.length].toUpperCase();
+  const box = document.getElementById('typeBox'+typedSoFar.length);
+
+  // Remove highlight from typed key
+  const prevKey = document.getElementById('key'+expectedChar);
+  if(prevKey) prevKey.classList.remove('key-highlight');
+
+  if (l === expectedChar) {
+    typedSoFar += l;
+    if(box) { box.textContent = l; box.classList.add('filled','correct-box'); }
+
+    if (typedSoFar.length === typingLen) {
+      // Word complete!
+      onTypingComplete(true);
+    } else {
+      // Highlight the next key
+      const nextKey = document.getElementById('key'+typingTarget[typedSoFar.length].toUpperCase());
+      if(nextKey) nextKey.classList.add('key-highlight');
+    }
+  } else {
+    if(box) { box.classList.add('wrong-box'); setTimeout(()=>box.classList.remove('wrong-box'),500); }
+  }
+}
+
+function typeBack() {
+  if (typedSoFar.length === 0) return;
+  typedSoFar = typedSoFar.slice(0,-1);
+  const box = document.getElementById('typeBox'+typedSoFar.length);
+  if(box) { box.textContent=''; box.classList.remove('filled','correct-box','wrong-box'); }
+  const nextKey = document.getElementById('key'+typingTarget[typedSoFar.length].toUpperCase());
+  if(nextKey) nextKey.classList.add('key-highlight');
+}
+
+function onTypingComplete(success) {
+  if(success) {
+    earnStar(2);
+    setFeedback(rnd(CUBBY_CORRECT), true);
+    triggerCelebration();
+    document.getElementById('nextBtn').disabled = false;
+  }
+}
+
+// ── MIC SUPPORT DETECTION ─────────────────────────────
+function hasSpeechSupport() {
+  return ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window);
+}
+
+// ── MIC HTML ──────────────────────────────────────────
+// Always show BOTH mic button AND tap choices.
+// Mic works where supported; tap choices work everywhere as backup.
+function micHTML(target, type) {
+  const micActive = hasSpeechSupport();
+  return `
+    <div class="mic-section">
+      <button class="mic-btn" id="micBtn" onclick="${micActive ? 'startListening()' : ''}"
+        style="${micActive ? '' : 'opacity:0.35;cursor:not-allowed'}">🎤</button>
+      <div class="wave-bars" id="waveBars">
+        <div class="wave-bar"></div><div class="wave-bar"></div>
+        <div class="wave-bar"></div><div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+      </div>
+      <div style="font-size:0.85rem;color:#AAA;font-weight:700;margin-bottom:6px;">
+        ${micActive ? 'Tap 🎤 to speak — or tap an answer!' : 'Tap the right answer!'}
+      </div>
+    </div>
+    ${tapAnswerHTML(target, type)}`;
+}
+
+// ── TAP-TO-ANSWER FALLBACK ────────────────────────────
+// BRAIN REASONING: On iOS where mic is unavailable, we show 3 choices.
+// Recognition/recall with visual options still activates phoneme-grapheme mapping.
+// Wrong options are phonetically plausible distractors — not random — so children
+// must actually discriminate sounds, not just guess by elimination.
+function tapAnswerHTML(target, type) {
+  const choices = generateChoices(target, type);
+  const btns = choices.map(c => `
+    <button class="tap-choice" onclick="tapAnswer('${c}','${target}','${type}')">${c.toUpperCase()}</button>
+  `).join('');
+  return `
+    <div class="tap-answer-section">
+      <div style="font-size:0.9rem;font-weight:700;color:#AAA;margin-bottom:12px;text-align:center;">
+        🎤 Mic not available — tap the right answer!
+      </div>
+      <div class="tap-choices">${btns}</div>
+    </div>`;
+}
+
+function generateChoices(target, type) {
+  let pool = [];
+  if (type === 'letter') {
+    const confusables = {s:'z,c',a:'e,o',t:'d,p',p:'b,d',i:'e,l',n:'m,u',m:'n,w',d:'b,p',g:'c,q',o:'a,u',c:'k,g',k:'c,x',e:'i,a',u:'o,a',r:'n,m',h:'n,b',b:'d,p',f:'v,t',l:'i,j',j:'g,y',v:'w,f',w:'m,v',x:'z,k',y:'j,g',z:'s,x',q:'g,p'};
+    const alts = (confusables[target] || 'a,b').split(',');
+    pool = [target, alts[0], alts[1]];
+  } else if (type === 'blend') {
+    const all = BLENDS.map(b => b.blend.toLowerCase());
+    const others = all.filter(b => b !== target).sort(() => Math.random()-0.5).slice(0,2);
+    while (others.length < 2) others.push(all.find(b => b !== target && !others.includes(b)) || 'bl');
+    pool = [target, ...others];
+  } else if (type === 'digraph') {
+    const all = [...new Set(DIGRAPHS.map(d => d.dg.toLowerCase()))];
+    const others = all.filter(d => d !== target).sort(() => Math.random()-0.5).slice(0,2);
+    while (others.length < 2) others.push(all.find(d => d !== target && !others.includes(d)) || 'sh');
+    pool = [target, ...others];
+  } else if (type === 'cvc') {
+    const all = CVC_WORDS.map(w => w.word.toLowerCase());
+    const others = all.filter(w => w !== target).sort(() => Math.random()-0.5).slice(0,2);
+    while (others.length < 2) others.push(all.find(w => w !== target && !others.includes(w)) || 'cat');
+    pool = [target, ...others];
+  } else if (type === 'sight') {
+    const all = SIGHT_WORDS.map(w => w.word.toLowerCase());
+    const others = all.filter(w => w !== target).sort(() => Math.random()-0.5).slice(0,2);
+    while (others.length < 2) others.push(all.find(w => w !== target && !others.includes(w)) || 'the');
+    pool = [target, ...others];
+  }
+  return pool.sort(() => Math.random()-0.5);
+}
+
+function tapAnswer(chosen, target, type) {
+  checkAnswer(chosen, target, type);
+}
+
+// ── SPEECH RECOGNITION ────────────────────────────────
+function setupMic(target, type) {
+  if (!hasSpeechSupport()) return;
+
+  // FIX: Always create a fresh recognition instance per item
+  // Reusing the old instance causes stale handlers to fire on wrong items
+  if (recognition) { try { recognition.abort(); } catch(e) {} recognition = null; }
+  recognition = initSpeech();
+  if (!recognition) return;
+
+  recognition.onresult = (e) => {
+    const said = e.results[0][0].transcript.trim().toLowerCase();
+    stopListening();
+    checkAnswer(said, target, type);
+  };
+  recognition.onerror = (e) => {
+    stopListening();
+    if (e.error === 'not-allowed') {
+      setFeedback("Mic permission denied — tap an answer below! 🎤", false);
+    } else {
+      setFeedback("Couldn't hear you — try again or tap below! 🎤", false);
+    }
+  };
+  recognition.onend = () => stopListening();
+}
+
+function startListening() {
+  if (!recognition) return;
+  const btn = document.getElementById('micBtn');
+  const waves = document.getElementById('waveBars');
+  if(btn) btn.classList.add('listening');
+  if(waves) waves.classList.add('active');
+  try { recognition.start(); } catch(e) {}
+}
+
+function stopListening() {
+  const btn = document.getElementById('micBtn');
+  const waves = document.getElementById('waveBars');
+  if(btn) btn.classList.remove('listening');
+  if(waves) waves.classList.remove('active');
+  try { recognition.stop(); } catch(e) {}
+}
+
+// ── ANSWER CHECKING ───────────────────────────────────
+function checkAnswer(said, target, type) {
+  // BRAIN REASONING: Phoneme matching is fuzzy — 'buh' matches 'b'.
+  // We check: exact match, starts-with, or contains the core sound.
+  // This prevents false negatives that would frustrate young learners.
+  const clean = said.replace(/[^a-z]/g,'');
+  let correct = false;
+
+  if (type === 'letter') {
+    correct = clean === target || clean === soundOf(target.toUpperCase()).replace(/[^a-z]/g,'') || clean.startsWith(target);
+  } else if (type === 'blend' || type === 'digraph') {
+    correct = clean.startsWith(target) || clean === target || clean.includes(target);
+  } else if (type === 'cvc' || type === 'sight') {
+    correct = clean === target || clean.includes(target);
+  } else if (type === 'readit') {
+    // Stricter — child must say the actual word. Allow one-character slur.
+    correct = clean === target || clean.includes(target) || (target.includes(clean) && clean.length >= target.length - 1);
+  }
+
+  profiles.list[profiles.active].total++;
+
+  if (correct) {
+    profiles.list[profiles.active].correct++;
+    sessionCorrect++; // FIX: was never incremented
+    const starIdx = retryCount === 0 ? 0 : retryCount === 1 ? 1 : 2; // FIX: capture before reset
+    retryCount = 0;
+    earnStar(starIdx);
+    setFeedback(rnd(CUBBY_CORRECT), true);
+    triggerCelebration();
+
+    // Blends, digraphs, and sight words never go to typing phase
+    const noTyping = ['blends','digraphs','sight','readit'];
+    if (settings.typingOn && sessionPhase === 'speak' && !noTyping.includes(currentSection)) {
+      setTimeout(()=>{
+        sessionPhase = 'type';
+        renderSession();
+      }, 1800);
+    } else {
+      markItemDone();
+      document.getElementById('nextBtn').disabled = false;
+    }
+  } else {
+    retryCount++;
+    if (retryCount >= 3) {
+      setFeedback("Let's hear it together! 🐾 "+target.toUpperCase(), false);
+      markItemDone();
+      document.getElementById('nextBtn').disabled = false;
+      retryCount = 0;
+    } else {
+      setFeedback(rnd(CUBBY_TRY), false);
+    }
+  }
+}
+
+function markItemDone() {
+  const item = sessionItems[sessionIdx];
+  const profile = profiles.list[profiles.active];
+  if (currentSection === 'letters'  && !profile.lettersDone.includes(item.l))           profile.lettersDone.push(item.l);
+  if (currentSection === 'blends'   && !profile.blendsDone.includes(item.blend+item.ex)) profile.blendsDone.push(item.blend+item.ex);
+  if (currentSection === 'digraphs' && !profile.digraphsDone.includes(item.dg+item.ex))  profile.digraphsDone.push(item.dg+item.ex);
+  if (currentSection === 'cvc'      && !profile.cvcDone.includes(item.word))             profile.cvcDone.push(item.word);
+  if (currentSection === 'sight'    && !profile.sightDone.includes(item.word))           profile.sightDone.push(item.word);
+  if (currentSection === 'readit'   && !profile.readitDone.includes(item.word))          profile.readitDone.push(item.word);
+}
+
+// ── NAVIGATION ────────────────────────────────────────
+function nextItem() {
+  sessionIdx++;
+  sessionPhase = 'speak';
+  retryCount = 0;
+  typedSoFar = '';
+  if (sessionIdx >= sessionItems.length) { showComplete(); return; }
+  renderSession();
+}
+
+function prevItem() {
+  if (sessionIdx === 0 && sessionPhase === 'speak') return;
+  if (sessionPhase === 'type') {
+    // Going back to speak phase of same item — re-enable Next since speak was already passed
+    sessionPhase = 'speak';
+    retryCount = 0;
+    renderSession();
+    // Item was already answered correctly to reach type phase, so Next should still work
+    const btn = document.getElementById('nextBtn');
+    if (btn) btn.disabled = false;
+    return;
+  }
+  sessionIdx = Math.max(0, sessionIdx - 1);
+  sessionPhase = 'speak';
+  retryCount = 0;
+  renderSession();
+}
+
+// ── COMPLETE SCREEN ───────────────────────────────────
+function showComplete() {
+  const profile = profiles.list[profiles.active];
+  profile.sessions++;
+  const pct = profile.total > 0 ? Math.round((profile.correct/profile.total)*100) : 0;
+  const area = document.getElementById('appArea');
+  updateProgress();
+  area.innerHTML = `
+    <div class="card">
+      <div class="complete-screen">
+        <div class="complete-bear">🐻</div>
+        <h2>Great Session, ${profile.name}!</h2>
+        <p>Cubby is so proud of you! 🎉</p>
+        <div class="score-badge">${sessionCorrect}/${sessionItems.length}</div>
+        <p style="margin-bottom:28px">You're becoming an amazing reader!</p>
+        <button class="btn-nav btn-next" style="margin:0 auto;display:block" onclick="buildSession()">🔄 Go Again!</button>
+      </div>
+    </div>`;
+  triggerCelebration();
+}
+
+// ── FEEDBACK & STARS ──────────────────────────────────
+function setFeedback(msg, correct) {
+  const el = document.getElementById('feedbackMsg');
+  if(!el) return;
+  el.textContent = msg;
+  el.className = 'feedback-msg '+(correct?'correct':'try-again');
+}
+
+function earnStar(idx) {
+  // Stars 0 = first try, 1 = second try, 2 = after typing
+  for(let i=0;i<=idx;i++){
+    const s=document.getElementById('star'+i);
+    if(s&&!s.classList.contains('earned')){ s.classList.add('earned'); }
+  }
+}
+
+// ── CELEBRATION CONFETTI ──────────────────────────────
+function triggerCelebration() {
+  const el = document.getElementById('celebration');
+  el.innerHTML = '';
+  el.classList.add('show');
+  const colors=['#F5A623','#52B788','#FF6B6B','#9B79D1','#4AACDA','#FFD07A'];
+  for(let i=0;i<42;i++){
+    const c=document.createElement('div');
+    c.className='confetti-piece';
+    c.style.left=Math.random()*100+'vw';
+    c.style.background=colors[Math.floor(Math.random()*colors.length)];
+    c.style.animationDuration=(1.5+Math.random()*2)+'s';
+    c.style.animationDelay=(Math.random()*0.5)+'s';
+    c.style.transform=`rotate(${Math.random()*360}deg)`;
+    c.style.borderRadius=Math.random()>0.5?'50%':'2px';
+    el.appendChild(c);
+  }
+  setTimeout(()=>el.classList.remove('show'), 3000);
+}
+
+// ── CUBBY SVG ─────────────────────────────────────────
+function cubbyHTML(msg, state='happy') {
+  return `<div class="cubby-wrap">
+    <svg class="cubby-svg" width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <!-- Body -->
+      <ellipse cx="40" cy="52" rx="28" ry="24" fill="#C8834A"/>
+      <!-- Belly -->
+      <ellipse cx="40" cy="56" rx="17" ry="14" fill="#E8B07A"/>
+      <!-- Head -->
+      <circle cx="40" cy="30" r="22" fill="#C8834A"/>
+      <!-- Ears -->
+      <circle cx="20" cy="12" r="9" fill="#C8834A"/>
+      <circle cx="20" cy="12" r="5" fill="#E8987A"/>
+      <circle cx="60" cy="12" r="9" fill="#C8834A"/>
+      <circle cx="60" cy="12" r="5" fill="#E8987A"/>
+      <!-- Face -->
+      <ellipse cx="40" cy="34" rx="12" ry="9" fill="#8B5E3C"/>
+      <!-- Eyes -->
+      <circle cx="33" cy="26" r="4" fill="white"/>
+      <circle cx="47" cy="26" r="4" fill="white"/>
+      <circle cx="34" cy="27" r="2.5" fill="#1A1A1A"/>
+      <circle cx="48" cy="27" r="2.5" fill="#1A1A1A"/>
+      <circle cx="35" cy="26" r="1" fill="white"/>
+      <circle cx="49" cy="26" r="1" fill="white"/>
+      <!-- Nose -->
+      <ellipse cx="40" cy="33" rx="4" ry="3" fill="#6B3A2A"/>
+      <!-- Smile -->
+      <path d="M34 38 Q40 44 46 38" stroke="#6B3A2A" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <!-- Honey jar -->
+      <rect x="52" y="54" width="18" height="16" rx="4" fill="#F5A623"/>
+      <rect x="54" y="50" width="14" height="6" rx="2" fill="#D4881A"/>
+      <text x="61" y="67" text-anchor="middle" font-size="9" fill="#6B3A2A">🍯</text>
+    </svg>
+    <div class="cubby-bubble">${msg}</div>
+  </div>`;
+}
+
+// ── TEACHER PANEL ─────────────────────────────────────
+let panelUnlocked = false;
+
+function openPanel() {
+  document.getElementById('panelOverlay').classList.add('open');
+  panelUnlocked = false;
+  renderPanelPinGate();
+}
+
+function renderPanelPinGate() {
+  document.getElementById('panelContent').innerHTML = `
+    <h2>🔧 Teacher Panel</h2>
+    <div class="pin-gate">
+      <p>Enter your 4-digit PIN to continue</p>
+      <input class="pin-input" type="password" maxlength="4" id="pinInput" placeholder="••••"/>
+      <br><br>
+      <button class="btn-nav btn-next" style="margin:0 auto;display:block;padding:12px 32px"
+        onclick="checkPin(document.getElementById('pinInput').value)">Unlock →</button>
+      <br>
+      <small style="color:#BBB">Default PIN: 1234</small>
+    </div>
+    <div style="margin-top:24px;padding-top:20px;border-top:2px solid var(--forest-pale);text-align:center;">
+      <div style="font-size:0.85rem;color:#AAA;margin-bottom:10px;">Testing this app?</div>
+      <button class="btn-honey btn-sm" style="padding:10px 24px;border-radius:50px;border:none;cursor:pointer;font-weight:800;font-size:0.95rem"
+        onclick="unlockDemo()">🔓 Unlock All Sections (Demo)</button>
+    </div>`;
+}
+
+function checkPin(val) {
+  if (!val || val.length < 4) {
+    alert('Please enter your 4-digit PIN first.');
+    return;
+  }
+  if (val === settings.pin) {
+    panelUnlocked = true;
+    renderPanelSettings();
+  } else {
+    const inp = document.getElementById('pinInput');
+    if(inp) { inp.style.borderColor='var(--red-soft)'; inp.value=''; }
+    setTimeout(()=>{ if(inp) inp.style.borderColor=''; }, 1000);
+    alert('Incorrect PIN. Default is 1234.');
+  }
+}
+
+function unlockDemo() {
+  settings.isPremium = true;
+  panelUnlocked = true;
+  renderPanelSettings();
+}
+
+function renderPanelSettings() {
+  const p = profiles.list[profiles.active];
+  const order = ['letters','cvc','blends','digraphs','sight','readit'];
+  const overrideOptions = order.map(id => {
+    const labels = {letters:'Letters only',cvc:'Up to CVC Words',blends:'Up to Blends',digraphs:'Up to Digraphs',sight:'Up to Sight Words',readit:'All sections'};
+    return `<option value="${id}" ${settings.adultOverride===id?'selected':''}>${labels[id]}</option>`;
+  }).join('');
+
+  document.getElementById('panelContent').innerHTML = `
+    <h2>🔧 Teacher Panel</h2>
+
+    ${settings.isPremium ? `<div style="background:var(--forest-pale);border-radius:12px;padding:10px 16px;margin-bottom:16px;font-weight:800;color:var(--forest);font-size:0.9rem;">✅ All sections unlocked</div>` : ''}
+
+    <div class="profile-tabs">
+      ${profiles.list.map((pr,i)=>`<button class="profile-tab ${profiles.active===i?'active':''}" onclick="switchProfile(${i})">${pr.name}</button>`).join('')}
+    </div>
+
+    <div class="progress-report">
+      <div style="font-weight:800;color:var(--forest);margin-bottom:8px">📊 ${p.name}'s Progress</div>
+      <div class="report-row"><span>🔤 Letters</span><span class="report-val">${p.lettersDone.length} / ${LETTERS.length}</span></div>
+      <div class="report-row"><span>🔀 Blends</span><span class="report-val">${p.blendsDone.length} / ${BLENDS.length}</span></div>
+      <div class="report-row"><span>🔡 Digraphs</span><span class="report-val">${p.digraphsDone.length} / ${DIGRAPHS.length}</span></div>
+      <div class="report-row"><span>📝 CVC Words</span><span class="report-val">${p.cvcDone.length} / ${CVC_WORDS.length}</span></div>
+      <div class="report-row"><span>👁️ Sight Words</span><span class="report-val">${p.sightDone.length} / ${SIGHT_WORDS.length}</span></div>
+      <div class="report-row"><span>📖 Read It!</span><span class="report-val">${p.readitDone.length} read</span></div>
+      <div class="report-row"><span>Sessions done</span><span class="report-val">${p.sessions}</span></div>
+      <div class="report-row"><span>Accuracy</span><span class="report-val">${p.total>0?Math.round((p.correct/p.total)*100):0}%</span></div>
+    </div>
+
+    <div style="margin-top:20px">
+      <div class="setting-row">
+        <div><div class="setting-label">Items per session</div><div class="setting-sub">How many items per round</div></div>
+        <div class="slider-wrap">
+          <input type="range" class="range-slider" min="3" max="20" value="${settings.sessionSize}"
+            id="sizeSlider" oninput="settings.sessionSize=+this.value;document.getElementById('sizeVal').textContent=this.value">
+          <span class="slider-val" id="sizeVal">${settings.sessionSize}</span>
+        </div>
+      </div>
+
+      <div class="setting-row">
+        <div><div class="setting-label">⌨️ Typing practice</div><div class="setting-sub">Keyboard after speaking (letters & words)</div></div>
+        <button class="toggle ${settings.typingOn?'on':''}" onclick="toggleSetting('typingOn',this)"></button>
+      </div>
+
+      <div class="setting-row">
+        <div><div class="setting-label">🔓 Unlock all sections</div><div class="setting-sub">Give access to all 5 sections</div></div>
+        <button class="toggle ${settings.isPremium?'on':''}" onclick="togglePremium(this)"></button>
+      </div>
+
+      <div class="setting-row" ${!settings.isPremium?'style="opacity:0.4;pointer-events:none"':''}>
+        <div>
+          <div class="setting-label">🎚️ Section access override</div>
+          <div class="setting-sub">Force-unlock up to a specific section regardless of progress gates</div>
+        </div>
+        <select style="padding:8px 12px;border-radius:12px;border:2px solid var(--forest-pale);font-family:'Nunito',sans-serif;font-weight:700;font-size:0.9rem;color:var(--forest);background:white;cursor:pointer;"
+          onchange="settings.adultOverride=this.value==='auto'?null:this.value">
+          <option value="auto" ${!settings.adultOverride?'selected':''}>Auto (use progress gates)</option>
+          ${overrideOptions}
+        </select>
+      </div>
+
+      <div style="background:var(--forest-pale);border-radius:12px;padding:12px 16px;margin:12px 0;">
+        <div style="font-weight:800;color:var(--forest);font-size:0.88rem;margin-bottom:8px;">🔒 Progress gates (items needed to unlock)</div>
+        <div class="report-row">
+          <span>CVC Words unlock after _ letters</span>
+          <input type="number" min="1" max="26" value="${settings.gates.cvc}"
+            style="width:52px;padding:4px 8px;border:2px solid var(--forest-pale);border-radius:8px;font-weight:800;font-family:'Baloo 2',cursive;font-size:1rem;text-align:center;"
+            onchange="settings.gates.cvc=+this.value">
+        </div>
+        <div class="report-row">
+          <span>Blends unlock after _ CVC words</span>
+          <input type="number" min="1" max="46" value="${settings.gates.blends}"
+            style="width:52px;padding:4px 8px;border:2px solid var(--forest-pale);border-radius:8px;font-weight:800;font-family:'Baloo 2',cursive;font-size:1rem;text-align:center;"
+            onchange="settings.gates.blends=+this.value">
+        </div>
+        <div class="report-row">
+          <span>Digraphs unlock after _ CVC words</span>
+          <input type="number" min="1" max="46" value="${settings.gates.digraphs}"
+            style="width:52px;padding:4px 8px;border:2px solid var(--forest-pale);border-radius:8px;font-weight:800;font-family:'Baloo 2',cursive;font-size:1rem;text-align:center;"
+            onchange="settings.gates.digraphs=+this.value">
+        </div>
+        <div class="report-row">
+          <span>Sight Words unlock after _ blends</span>
+          <input type="number" min="1" max="22" value="${settings.gates.sight}"
+            style="width:52px;padding:4px 8px;border:2px solid var(--forest-pale);border-radius:8px;font-weight:800;font-family:'Baloo 2',cursive;font-size:1rem;text-align:center;"
+            onchange="settings.gates.sight=+this.value">
+        </div>
+        <div class="report-row">
+          <span>Read It! unlocks after _ sight words</span>
+          <input type="number" min="1" max="48" value="${settings.gates.readit}"
+            style="width:52px;padding:4px 8px;border:2px solid var(--forest-pale);border-radius:8px;font-weight:800;font-family:'Baloo 2',cursive;font-size:1rem;text-align:center;"
+            onchange="settings.gates.readit=+this.value">
+        </div>
+      </div>
+
+      <div class="setting-row">
+        <div><div class="setting-label">🔒 Change PIN</div></div>
+        <button class="btn-sm btn-honey" style="padding:8px 18px;border-radius:50px;border:none;cursor:pointer;font-weight:700" onclick="changePin()">Change</button>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">🔄 Reset ${p.name}'s progress</div></div>
+        <button class="btn-sm" style="background:#FFE5E5;color:var(--red-soft);border:none;padding:8px 16px;border-radius:50px;font-weight:700;cursor:pointer" onclick="resetProfile()">Reset</button>
+      </div>
+    </div>
+
+    <button class="panel-close" onclick="closePanel()">✓ Save & Close</button>`;
+}
+
+function togglePremium(btn) {
+  settings.isPremium = !settings.isPremium;
+  btn.classList.toggle('on', settings.isPremium);
+  renderPanelSettings();
+}
+
+function switchProfile(i) {
+  profiles.active = i;
+  renderPanelSettings();
+}
+
+function toggleSetting(key, btn) {
+  settings[key] = !settings[key];
+  btn.classList.toggle('on', settings[key]);
+}
+
+function resetProfile() {
+  if(!confirm('Reset progress for '+profiles.list[profiles.active].name+'?')) return;
+  const p = profiles.list[profiles.active];
+  p.lettersDone=[]; p.blendsDone=[]; p.digraphsDone=[]; p.cvcDone=[]; p.sightDone=[]; p.readitDone=[];
+  p.sessions=0; p.correct=0; p.total=0;
+  renderPanelSettings();
+}
+
+function changePin() {
+  const np = prompt('Enter new 4-digit PIN:');
+  if(np && /^\d{4}$/.test(np)) { settings.pin = np; alert('PIN updated!'); }
+  else if(np) alert('PIN must be exactly 4 digits.');
+}
+
+function closePanel() {
+  document.getElementById('panelOverlay').classList.remove('open');
+  buildSession();
+}
+
+// ── UPGRADE MODAL ─────────────────────────────────────
+function showUpgrade() {
+  const area = document.getElementById('appArea');
+  const existing = document.getElementById('upgradeModal');
+  if(existing) { existing.remove(); return; }
+  const div = document.createElement('div');
+  div.id = 'upgradeModal';
+  div.innerHTML = `
+    <div class="upgrade-banner">
+      <h3>🐻 Unlock All of Cubby Reads!</h3>
+      <p>Get Blends, CVC Words, progress tracking, and 5 child profiles with Cubby Pro.</p>
+      <button class="btn-upgrade" onclick="simulatePremium()">⭐ Try Cubby Pro — Coming Soon!</button>
+      <p style="font-size:0.8rem;opacity:0.6;margin-top:12px">Free tier includes all 26 letters. No ads. Ever.</p>
+    </div>`;
+  area.prepend(div);
+}
+
+function simulatePremium() {
+  settings.isPremium = true;
+  const m = document.getElementById('upgradeModal');
+  if(m) m.remove();
+  alert('✨ Premium unlocked! (Demo mode)');
+  buildNav();
+}
+
+// ── UTILS ─────────────────────────────────────────────
+function rnd(arr) { return arr[Math.floor(Math.random()*arr.length)]; }
+
+// ── INIT ──────────────────────────────────────────────
+window.addEventListener('load', ()=>{
+  if('speechSynthesis' in window) {
+    window.speechSynthesis.getVoices();
+    window.speechSynthesis.onvoiceschanged = ()=>window.speechSynthesis.getVoices();
+  }
+  buildSession();
+});
+</script>
 </body>
 </html>
