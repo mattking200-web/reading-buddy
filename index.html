@@ -760,29 +760,28 @@ function buildSession() {
   let pool = [];
   if (currentSection === 'letters') {
     pool = LETTERS.filter(l => !profile.lettersDone.includes(l.l));
-    if (pool.length < settings.sessionSize) pool = [...LETTERS];
+    if (pool.length === 0) { showSectionComplete(); return; }
   } else if (currentSection === 'blends') {
     pool = BLENDS.filter(b => !profile.blendsDone.includes(b.blend+b.ex));
-    if (pool.length < settings.sessionSize) pool = [...BLENDS];
+    if (pool.length === 0) { showSectionComplete(); return; }
   } else if (currentSection === 'digraphs') {
     pool = DIGRAPHS.filter(d => !profile.digraphsDone.includes(d.dg+d.ex));
-    if (pool.length < settings.sessionSize) pool = [...DIGRAPHS];
+    if (pool.length === 0) { showSectionComplete(); return; }
   } else if (currentSection === 'cvc') {
     pool = CVC_WORDS.filter(w => !profile.cvcDone.includes(w.word));
-    if (pool.length < settings.sessionSize) pool = [...CVC_WORDS];
+    if (pool.length === 0) { showSectionComplete(); return; }
   } else if (currentSection === 'sight') {
     pool = SIGHT_WORDS.filter(w => !profile.sightDone.includes(w.word));
-    if (pool.length < settings.sessionSize) pool = [...SIGHT_WORDS];
+    if (pool.length === 0) { showSectionComplete(); return; }
   } else if (currentSection === 'readit') {
-    // Pool = all CVC words + sight words the child has already seen, mixed together.
-    // We use the word and a picture where available; sight words use their sentence as context.
     const cvcPool = CVC_WORDS.map(w => ({word: w.word, pic: w.pic, hint: null, type:'cvc'}));
     const sightPool = SIGHT_WORDS.map(w => ({word: w.word, pic: w.pic, hint: w.sentence, type:'sight'}));
     const combined = [...cvcPool, ...sightPool];
     pool = combined.filter(w => !profile.readitDone.includes(w.word));
-    if (pool.length < settings.sessionSize) pool = [...combined];
+    if (pool.length === 0) { showSectionComplete(); return; }
   }
-  sessionItems = pool.slice(0, settings.sessionSize);
+  // Use however many unseen items remain, up to sessionSize — never recycle
+  sessionItems = pool.sort(() => Math.random()-0.5).slice(0, settings.sessionSize);
   sessionIdx = 0; sessionCorrect = 0; sessionPhase = 'speak'; retryCount = 0;
   renderSession();
 }
@@ -1539,9 +1538,10 @@ function prevItem() {
 function showComplete() {
   const profile = profiles.list[profiles.active];
   profile.sessions++;
-  const pct = profile.total > 0 ? Math.round((profile.correct/profile.total)*100) : 0;
   const area = document.getElementById('appArea');
   updateProgress();
+  // Check if any unseen items remain in this section for "Go Again"
+  const remaining = getRemainingCount();
   area.innerHTML = `
     <div class="card">
       <div class="complete-screen">
@@ -1550,10 +1550,54 @@ function showComplete() {
         <p>Cubby is so proud of you! 🎉</p>
         <div class="score-badge">${sessionCorrect}/${sessionItems.length}</div>
         <p style="margin-bottom:28px">You're becoming an amazing reader!</p>
-        <button class="btn-nav btn-next" style="margin:0 auto;display:block" onclick="buildSession()">🔄 Go Again!</button>
+        ${remaining > 0
+          ? `<button class="btn-nav btn-next" style="margin:0 auto 12px;display:block" onclick="buildSession()">▶ Keep Going (${remaining} left)</button>`
+          : `<button class="btn-nav btn-next" style="margin:0 auto 12px;display:block;background:var(--honey);color:var(--bark)" onclick="showSectionComplete()">🏆 Section Complete!</button>`
+        }
       </div>
     </div>`;
   triggerCelebration();
+}
+
+function showSectionComplete() {
+  const profile = profiles.list[profiles.active];
+  const sectionLabels = {letters:'Letters',cvc:'CVC Words',blends:'Blends',digraphs:'Digraphs',sight:'Sight Words',readit:'Read It!'};
+  const label = sectionLabels[currentSection] || currentSection;
+  const area = document.getElementById('appArea');
+  updateProgress();
+  area.innerHTML = `
+    <div class="card">
+      <div class="complete-screen">
+        <div class="complete-bear">🏆</div>
+        <h2>You finished ${label}!</h2>
+        <p style="font-size:1.3rem">Amazing work, ${profile.name}! 🎉</p>
+        <p style="margin-bottom:28px">Cubby is super proud — you did every single one!</p>
+        <button class="btn-nav btn-next" style="margin:0 auto 12px;display:block" onclick="buildSession()">🔄 Practise Again</button>
+      </div>
+    </div>`;
+  triggerCelebration();
+  // Reset done list so the section can be practised again
+  const profile2 = profiles.list[profiles.active];
+  if (currentSection === 'letters')  profile2.lettersDone  = [];
+  if (currentSection === 'cvc')      profile2.cvcDone      = [];
+  if (currentSection === 'blends')   profile2.blendsDone   = [];
+  if (currentSection === 'digraphs') profile2.digraphsDone = [];
+  if (currentSection === 'sight')    profile2.sightDone    = [];
+  if (currentSection === 'readit')   profile2.readitDone   = [];
+}
+
+function getRemainingCount() {
+  const p = profiles.list[profiles.active];
+  if (currentSection === 'letters')  return LETTERS.filter(l => !p.lettersDone.includes(l.l)).length;
+  if (currentSection === 'cvc')      return CVC_WORDS.filter(w => !p.cvcDone.includes(w.word)).length;
+  if (currentSection === 'blends')   return BLENDS.filter(b => !p.blendsDone.includes(b.blend+b.ex)).length;
+  if (currentSection === 'digraphs') return DIGRAPHS.filter(d => !p.digraphsDone.includes(d.dg+d.ex)).length;
+  if (currentSection === 'sight')    return SIGHT_WORDS.filter(w => !p.sightDone.includes(w.word)).length;
+  if (currentSection === 'readit') {
+    const all = [...CVC_WORDS.map(w=>w.word), ...SIGHT_WORDS.map(w=>w.word)];
+    return all.filter(w => !p.readitDone.includes(w)).length;
+  }
+  return 0;
 }
 
 // ── FEEDBACK & STARS ──────────────────────────────────
