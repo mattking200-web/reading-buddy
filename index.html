@@ -674,10 +674,10 @@ const CUBBY_TRY = [
   "Almost! Let's try together 🐾","Good try! Listen one more time...","You can do it! One more go!",
   "Close! Let's hear it again 🎵","Nearly there! Try once more!",
 ];
-const CUBBY_GREET_LETTERS  = ["Can you say the sound? Tap 🎤 or pick an answer!","What sound does this letter make?","Touch the letter, then say its sound!","Listen, then it's your turn! 🎤"];
-const CUBBY_GREET_BLENDS   = ["Can you say this blend? Tap 🎤 or pick below!","Slide the sounds together! 🎵","Listen to how they blend — now you try!"];
-const CUBBY_GREET_DIGRAPHS = ["Two letters — one sound! Can you say it?","Listen to the special sound, then try! 🎤","What sound do these two letters make together?"];
-const CUBBY_GREET_CVC      = ["Read this word out loud! 🎤","Can you sound it out?","Say each sound, then blend them together!"];
+const CUBBY_GREET_LETTERS  = ["What sound does this letter make? Tap your answer!", "Listen to the sound — then tap the right letter!", "Hear the sound, then pick your answer!", "Touch the letter to hear it, then tap below!"];
+const CUBBY_GREET_BLENDS   = ["Tap the right blend! 🎵", "Slide the sounds together — then tap your answer!", "Listen to how they blend — tap the right one!"];
+const CUBBY_GREET_DIGRAPHS = ["Two letters — one sound! Tap your answer!", "Listen to the special sound, then tap below!", "What sound do these two letters make? Tap it!"];
+const CUBBY_GREET_CVC      = ["Read this word — then tap your answer!", "Can you sound it out? Tap the word you see!", "Say each sound, then tap the right word!"];
 const CUBBY_GREET_SIGHT    = ["This is a sight word — read it fast! 👀","Can you read this word?","See it, say it, know it! 🐻"];
 const CUBBY_GREET_READIT   = ["Can you READ this word out loud? 📖","Say the whole word into the mic!","Read it aloud — you know this one! 🐻","See it and say it! 🎤"];
 const CUBBY_TYPE_LETTER    = ["Now type the letter on the keyboard! ⌨️","Can you find it on the keyboard?","Type it! Show me you know it! 🐾"];
@@ -895,7 +895,7 @@ function renderLetter(area, item) {
         </div>
       </div>
 
-      ${isTypePhase ? letterTypingHTML(item) : micHTML(item.l.toLowerCase(),'letter')}
+      ${isTypePhase ? letterTypingHTML(item) : tapAnswerHTML(item.l.toLowerCase(),'letter')}
 
       <div class="feedback-msg" id="feedbackMsg"></div>
 
@@ -906,13 +906,8 @@ function renderLetter(area, item) {
     </div>`;
 
   if (!isTypePhase) {
-    // Step 1: play just the isolated phoneme sound
-    // Step 2: after a clear pause, say the picture word naturally
-    // BRAIN REASONING: Separating the phoneme from the word prevents the child
-    // hearing a blend of both — clean phoneme isolation first, then semantic anchor.
     setTimeout(()=> playLetterSound(item.l), 500);
     setTimeout(()=> speak(item.word + '. ' + item.word + '.', 0.72, 1.05), 1800);
-    setupMic(item.l.toLowerCase(), 'letter');
   } else {
     setupTyping(item.l, 1);
   }
@@ -978,7 +973,7 @@ function renderBlend(area, item) {
         <div class="picture-word">${item.ex}</div>
       </div>
 
-      ${micHTML(item.blend.toLowerCase(),'blend')}
+      ${tapAnswerHTML(item.blend.toLowerCase(),'blend')}
       <div class="feedback-msg" id="feedbackMsg"></div>
 
       <div class="nav-controls">
@@ -991,7 +986,6 @@ function renderBlend(area, item) {
     document.getElementById('blendDisp').classList.add('slide');
     playBlendSound(item.blend, item.ex);
   },500);
-  setupMic(item.blend.toLowerCase(), 'blend');
 }
 
 function playBlendSound(blend, ex) {
@@ -1026,7 +1020,7 @@ function renderCVC(area, item) {
 
       <div class="cvc-display">${letterBoxes}</div>
 
-      ${isTypePhase ? cvcTypingHTML(item) : micHTML(item.word.toLowerCase(),'cvc')}
+      ${isTypePhase ? cvcTypingHTML(item) : tapAnswerHTML(item.word.toLowerCase(),'cvc')}
       <div class="feedback-msg" id="feedbackMsg"></div>
 
       <div class="nav-controls">
@@ -1040,7 +1034,6 @@ function renderCVC(area, item) {
       revealCVCLetters(item);
       speak(item.word.toLowerCase(), 0.65, 1.05);
     }, 500);
-    setupMic(item.word.toLowerCase(), 'cvc');
   } else {
     setupTyping(item.word, item.word.length);
   }
@@ -1092,7 +1085,7 @@ function renderDigraph(area, item) {
         <div class="picture-word">${item.ex} <span style="color:var(--forest-light);font-size:1rem">(${item.pos === 'start' ? item.dg + ' at start' : item.dg + ' at end'})</span></div>
       </div>
 
-      ${micHTML(item.dg.toLowerCase(),'digraph')}
+      ${tapAnswerHTML(item.dg.toLowerCase(),'digraph')}
       <div class="feedback-msg" id="feedbackMsg"></div>
 
       <div class="nav-controls">
@@ -1102,7 +1095,6 @@ function renderDigraph(area, item) {
     </div>`;
 
   setTimeout(()=> playDigraphSound(item.dg, item.ex), 500);
-  setupMic(item.dg.toLowerCase(), 'digraph');
 }
 
 function playDigraphSound(dg, ex) {
@@ -1344,7 +1336,7 @@ function tapAnswerHTML(target, type) {
   return `
     <div class="tap-answer-section">
       <div style="font-size:0.9rem;font-weight:700;color:#AAA;margin-bottom:12px;text-align:center;">
-        🎤 Mic not available — tap the right answer!
+        Tap the right answer!
       </div>
       <div class="tap-choices">${btns}</div>
     </div>`;
@@ -1385,99 +1377,121 @@ function tapAnswer(chosen, target, type) {
 }
 
 // ── SPEECH RECOGNITION ────────────────────────────────
-let micPermissionDenied = false; // track permanent denial for this session
+let micPermissionDenied = false;
+let currentRecognition = null; // separate from global to avoid stale ref issues
 
 function setupMic(target, type) {
-  if (!hasSpeechSupport()) return;
+  if (!hasSpeechSupport() || micPermissionDenied) return;
 
-  // FIX: Always create a fresh recognition instance per item
-  if (recognition) { try { recognition.abort(); } catch(e) {} recognition = null; }
+  // Abort any in-progress recognition cleanly
+  if (currentRecognition) {
+    try { currentRecognition.abort(); } catch(e) {}
+    currentRecognition = null;
+  }
   recognition = initSpeech();
   if (!recognition) return;
+  currentRecognition = recognition;
+  recognition.maxAlternatives = 5; // check up to 5 guesses, not just 1
+
+  const thisRecognition = recognition; // capture for closure — prevents stale ref
 
   recognition.onresult = (e) => {
-    const said = e.results[0][0].transcript.trim().toLowerCase();
-    stopListening();
-    checkAnswer(said, target, type);
+    if (thisRecognition !== currentRecognition) return; // stale, ignore
+    // Try all alternatives — accept the first one that matches
+    const transcripts = [];
+    for (let i = 0; i < e.results[0].length; i++) {
+      transcripts.push(e.results[0][i].transcript.trim().toLowerCase());
+    }
+    updateMicUI(false);
+    // Try each alternative until one matches, or use the best one
+    let matched = false;
+    for (const said of transcripts) {
+      if (checkAnswer(said, target, type, true)) { matched = true; break; }
+    }
+    if (!matched) checkAnswer(transcripts[0], target, type, false);
   };
+
   recognition.onerror = (e) => {
-    stopListening();
+    if (thisRecognition !== currentRecognition) return;
+    updateMicUI(false);
     if (e.error === 'not-allowed') {
       micPermissionDenied = true;
+      currentRecognition = null;
       const btn = document.getElementById('micBtn');
-      if (btn) {
-        btn.style.opacity = '0.25';
-        btn.style.cursor = 'not-allowed';
-        btn.onclick = null;
-      }
-      // Reveal tap fallback if in Read It section
+      if (btn) { btn.style.opacity = '0.25'; btn.style.cursor = 'not-allowed'; btn.onclick = null; }
       const fallback = document.getElementById('readitTapFallback');
       if (fallback) fallback.style.display = 'block';
-      setFeedback('🎤 Mic blocked. Tap the word below — or click 🔒 in your browser bar to allow the mic.', false);
+      setFeedback('🎤 Mic blocked — tap an answer below, or click 🔒 in the browser bar to allow the mic.', false);
+    } else if (e.error === 'no-speech') {
+      setFeedback("Cubby didn't hear anything — tap 🎤 and try again!", false);
     } else {
       setFeedback("Couldn't hear that — try again or tap an answer below.", false);
     }
   };
-  recognition.onend = () => stopListening();
+
+  recognition.onend = () => {
+    if (thisRecognition !== currentRecognition) return; // stale, ignore
+    updateMicUI(false);
+  };
+}
+
+function updateMicUI(listening) {
+  const btn = document.getElementById('micBtn');
+  const waves = document.getElementById('waveBars');
+  if (btn) btn.classList.toggle('listening', listening);
+  if (waves) waves.classList.toggle('active', listening);
 }
 
 function startListening() {
   if (!recognition || micPermissionDenied) return;
-  const btn = document.getElementById('micBtn');
-  const waves = document.getElementById('waveBars');
-  if(btn) btn.classList.add('listening');
-  if(waves) waves.classList.add('active');
+  updateMicUI(true);
   try { recognition.start(); } catch(e) {
-    stopListening();
-    setFeedback("Mic error — tap an answer below.", false);
+    updateMicUI(false);
+    setFeedback("Mic error — try tapping again.", false);
   }
 }
 
 function stopListening() {
-  const btn = document.getElementById('micBtn');
-  const waves = document.getElementById('waveBars');
-  if(btn) btn.classList.remove('listening');
-  if(waves) waves.classList.remove('active');
-  try { recognition.stop(); } catch(e) {}
+  updateMicUI(false);
+  // Don't call recognition.stop() here — let it end naturally or via abort in setupMic
 }
 
 // ── ANSWER CHECKING ───────────────────────────────────
-function checkAnswer(said, target, type) {
-  // BRAIN REASONING: Phoneme matching is fuzzy — 'buh' matches 'b'.
-  // We check: exact match, starts-with, or contains the core sound.
-  // This prevents false negatives that would frustrate young learners.
-  const clean = said.replace(/[^a-z]/g,'');
+function checkAnswer(said, target, type, dryRun = false) {
+  // Keep spaces for word-boundary matching; strip everything else
+  const clean = said.replace(/[^a-z ]/g,'').trim();
+  const words = clean.split(/\s+/);
+  const noSpace = clean.replace(/\s/g,'');
   let correct = false;
 
   if (type === 'letter') {
-    correct = clean === target || clean === soundOf(target.toUpperCase()).replace(/[^a-z]/g,'') || clean.startsWith(target);
+    // Child may say the sound, the example word, or anything starting with the sound
+    correct = noSpace === target || noSpace.startsWith(target) ||
+              noSpace === soundOf(target.toUpperCase()).replace(/[^a-z]/g,'');
   } else if (type === 'blend' || type === 'digraph') {
-    correct = clean.startsWith(target) || clean === target || clean.includes(target);
-  } else if (type === 'cvc' || type === 'sight') {
-    correct = clean === target || clean.includes(target);
-  } else if (type === 'readit') {
-    // Stricter — child must say the actual word. Allow one-character slur.
-    correct = clean === target || clean.includes(target) || (target.includes(clean) && clean.length >= target.length - 1);
+    // Child says the blend sound or a word starting with the blend
+    correct = noSpace.startsWith(target) || noSpace === target;
+  } else if (type === 'cvc' || type === 'sight' || type === 'readit') {
+    // Must be an actual word match — no substring matching to avoid 'scatter' matching 'cat'
+    correct = words.includes(target) || clean === target;
   }
+
+  if (dryRun) return correct;
 
   profiles.list[profiles.active].total++;
 
   if (correct) {
     profiles.list[profiles.active].correct++;
-    sessionCorrect++; // FIX: was never incremented
-    const starIdx = retryCount === 0 ? 0 : retryCount === 1 ? 1 : 2; // FIX: capture before reset
+    sessionCorrect++;
+    const starIdx = retryCount === 0 ? 0 : retryCount === 1 ? 1 : 2;
     retryCount = 0;
     earnStar(starIdx);
     setFeedback(rnd(CUBBY_CORRECT), true);
     triggerCelebration();
 
-    // Blends, digraphs, and sight words never go to typing phase
     const noTyping = ['blends','digraphs','sight','readit'];
     if (settings.typingOn && sessionPhase === 'speak' && !noTyping.includes(currentSection)) {
-      setTimeout(()=>{
-        sessionPhase = 'type';
-        renderSession();
-      }, 1800);
+      setTimeout(()=>{ sessionPhase = 'type'; renderSession(); }, 1800);
     } else {
       markItemDone();
       document.getElementById('nextBtn').disabled = false;
@@ -1485,7 +1499,7 @@ function checkAnswer(said, target, type) {
   } else {
     retryCount++;
     if (retryCount >= 3) {
-      setFeedback("Let's hear it together! 🐾 "+target.toUpperCase(), false);
+      setFeedback("Let's hear it together! 🐾 " + target.toUpperCase(), false);
       markItemDone();
       document.getElementById('nextBtn').disabled = false;
       retryCount = 0;
@@ -1493,6 +1507,7 @@ function checkAnswer(said, target, type) {
       setFeedback(rnd(CUBBY_TRY), false);
     }
   }
+  return correct;
 }
 
 function markItemDone() {
