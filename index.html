@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Cubby Reads 🐻</title>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Baloo+2:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -74,7 +74,12 @@
   .btn-honey:hover { background: var(--honey-dark); transform: translateY(-1px); }
 
   /* ── MAIN LAYOUT ── */
-  main { position: relative; z-index: 5; max-width: 860px; margin: 0 auto; padding: 28px 20px 60px; }
+  main { position: relative; z-index: 5; max-width: 860px; margin: 0 auto; padding: 28px 20px 60px;
+    /* iOS notch / home-bar safe area */
+    padding-left: max(20px, env(safe-area-inset-left));
+    padding-right: max(20px, env(safe-area-inset-right));
+    padding-bottom: max(60px, calc(60px + env(safe-area-inset-bottom)));
+  }
 
   /* ── SECTION TABS ── */
   .section-nav {
@@ -195,6 +200,42 @@
   @keyframes popIn { 0%{transform:scale(0.7)} 100%{transform:scale(1)} }
   @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
 
+  /* ── ELKONIN BLENDING TRACK ── */
+  .blending-track {
+    display: flex; justify-content: center; align-items: center;
+    gap: 28px; margin: 4px 0 18px; position: relative;
+  }
+  .blending-track::before {
+    /* connector line behind dots */
+    content: ''; position: absolute;
+    left: calc(50% - 40px); right: calc(50% - 40px);
+    height: 3px; background: var(--forest-pale);
+    border-radius: 99px; z-index: 0;
+  }
+  .blend-dot {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--forest-pale); border: 2.5px solid #CCC;
+    position: relative; z-index: 1;
+    transition: background 0.25s, border-color 0.25s, transform 0.18s;
+    cursor: pointer; touch-action: none;
+  }
+  .blend-dot.lit {
+    background: var(--honey);
+    border-color: var(--honey-dark);
+    box-shadow: 0 0 0 4px rgba(245,166,35,0.25);
+  }
+  .blend-dot.drag-active {
+    transform: scale(1.45);
+    background: var(--forest);
+    border-color: var(--forest);
+    box-shadow: 0 0 0 6px rgba(45,106,79,0.2);
+  }
+  .blend-label {
+    font-size: 0.72rem; font-weight: 800; color: #AAA;
+    text-align: center; margin-top: 4px; letter-spacing: 1px;
+    user-select: none;
+  }
+
   .keyboard { display: flex; flex-direction: column; align-items: center; gap: 8px; }
   .key-row { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
   .key {
@@ -310,6 +351,191 @@
   }
   .report-row { display:flex; justify-content:space-between; font-size:0.92rem; padding:4px 0; }
   .report-val { font-weight:800; color:var(--forest); }
+  .report-section-row {
+    display:flex; flex-direction:column; gap:4px; padding:8px 0;
+    border-bottom:1px solid rgba(0,0,0,0.06);
+  }
+  .report-section-row:last-child { border-bottom:none; }
+  .report-section-top {
+    display:flex; justify-content:space-between; align-items:center;
+    font-size:0.92rem; font-weight:700;
+  }
+  .report-section-count {
+    font-weight:800; color:var(--forest); font-size:0.9rem; white-space:nowrap;
+  }
+  .report-bar-track {
+    height:8px; background:rgba(0,0,0,0.08); border-radius:99px; overflow:hidden;
+  }
+  .report-bar-fill {
+    height:100%; border-radius:99px; background:var(--forest);
+    transition:width 0.4s ease;
+  }
+  .report-bar-fill.complete { background:var(--honey-dark); }
+  .report-badge {
+    font-size:0.75rem; font-weight:800; padding:2px 8px; border-radius:99px;
+    background:var(--honey); color:var(--bark);
+  }
+  .report-locked { color:#aaa; font-size:0.85rem; }
+
+  /* Heart Words — irregular letter highlighting */
+  .hw-word-display {
+    display:inline-flex; gap:0; align-items:flex-end;
+    font-family:'Baloo 2',cursive; font-size:4rem; font-weight:900;
+    color:var(--bark); background:linear-gradient(135deg,var(--honey),#FFD07A);
+    padding:16px 40px; border-radius:20px;
+    box-shadow:0 8px 28px rgba(245,166,35,0.35);
+    cursor:pointer; letter-spacing:2px;
+  }
+  .hw-letter {
+    position:relative; display:inline-flex;
+    flex-direction:column; align-items:center;
+  }
+  .heart-badge {
+    position:absolute; top:-22px; left:50%; transform:translateX(-50%);
+    font-size:0.95rem; line-height:1;
+    animation: heartPop 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+  }
+  @keyframes heartPop {
+    from { opacity:0; transform:translateX(-50%) scale(0.3); }
+    to   { opacity:1; transform:translateX(-50%) scale(1); }
+  }
+  .hw-letter.is-heart { color:#c0392b; }
+
+  /* ── STORIES TAB ── */
+  .stories-grid-wrap { padding: 0 0 40px; }
+  .stories-header { text-align:center; padding:16px 0 20px; }
+  .stories-overall-bar {
+    height:8px; background:rgba(0,0,0,0.08); border-radius:99px;
+    overflow:hidden; max-width:200px; margin:8px auto 0;
+  }
+  .stories-overall-fill {
+    height:100%; background:var(--forest); border-radius:99px; transition:width 0.5s ease;
+  }
+  .stories-grid {
+    display:grid; grid-template-columns:repeat(2,1fr); gap:14px;
+    padding:0 4px;
+  }
+  @media(max-width:400px){ .stories-grid{grid-template-columns:1fr;} }
+
+  .story-card-thumb {
+    border-radius:20px; padding:18px 14px 14px; border:3px solid transparent;
+    cursor:pointer; position:relative; overflow:hidden;
+    transition:transform 0.2s, box-shadow 0.2s;
+    box-shadow:0 3px 12px rgba(0,0,0,0.08);
+  }
+  .story-card-thumb:active { transform:scale(0.96); }
+  .story-thumb-emoji { font-size:2.5rem; line-height:1; margin-bottom:8px; }
+  .story-thumb-title {
+    font-family:'Baloo 2',cursive; font-weight:800; font-size:1rem;
+    color:var(--bark); margin-bottom:4px; line-height:1.2;
+  }
+  .story-thumb-focus { font-size:0.72rem; color:#888; font-weight:600; line-height:1.3; }
+  .story-done-badge {
+    position:absolute; top:10px; right:10px;
+    background:var(--forest); color:white;
+    font-size:0.68rem; font-weight:800; padding:3px 8px; border-radius:99px;
+  }
+  .story-locked { opacity:0.65; }
+  .story-lock-overlay {
+    position:absolute; inset:0; background:rgba(255,255,255,0.72);
+    border-radius:18px; display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    font-size:1.6rem; color:#888; font-weight:700;
+    pointer-events:none;
+  }
+  .story-lock-overlay span { font-size:0.72rem; margin-top:4px; }
+  @keyframes storyShake {
+    0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)}
+  }
+  .story-shake { animation:storyShake 0.4s ease; }
+
+  /* Story read view */
+  .story-read-wrap { padding-bottom:40px; }
+  .story-back-btn {
+    background:none; border:none; color:var(--forest);
+    font-weight:800; font-size:0.95rem; cursor:pointer;
+    padding:8px 0 16px; display:block; font-family:'Baloo 2',cursive;
+  }
+  .story-read-card {
+    border-radius:24px; padding:28px 24px 24px;
+    box-shadow:0 6px 24px rgba(0,0,0,0.1); margin-bottom:20px;
+  }
+  .story-read-emoji { font-size:4rem; line-height:1; text-align:center; margin-bottom:12px; }
+  .story-read-title {
+    font-family:'Baloo 2',cursive; font-weight:900; font-size:1.8rem;
+    text-align:center; margin:0 0 10px; line-height:1.1;
+  }
+  .story-focus-chip {
+    display:inline-block; background:rgba(0,0,0,0.07);
+    border-radius:99px; padding:4px 14px; font-size:0.78rem;
+    font-weight:700; color:#666; margin:0 auto 20px; display:block;
+    text-align:center; width:fit-content; margin:0 auto 20px;
+  }
+  .story-text-block {
+    background:rgba(255,255,255,0.7); border-radius:16px;
+    padding:20px 18px; box-shadow:0 2px 8px rgba(0,0,0,0.06);
+  }
+  .story-line {
+    font-family:'Baloo 2',cursive; font-size:1.55rem; font-weight:700;
+    line-height:1.7; color:var(--bark); margin:0 0 6px;
+    border-radius:8px; padding:2px 6px;
+    transition:background 0.2s, color 0.2s;
+  }
+  .story-line:last-child { margin-bottom:0; }
+  .story-line-active {
+    background:var(--honey); color:var(--bark);
+    border-radius:10px; padding:4px 10px;
+  }
+  @media(max-width:380px){
+    .story-line { font-size:1.3rem; }
+    .story-read-card { padding:20px 16px; }
+  }
+
+  .story-listen-btn {
+    background:var(--forest); color:white;
+    border:none; border-radius:50px; padding:12px 28px;
+    font-family:'Baloo 2',cursive; font-size:1rem; font-weight:800;
+    cursor:pointer; box-shadow:0 4px 14px rgba(45,106,79,0.3);
+    transition:transform 0.15s, box-shadow 0.15s;
+  }
+  .story-listen-btn:active { transform:scale(0.96); }
+  .story-listen-btn:disabled { opacity:0.6; cursor:not-allowed; }
+
+  .story-actions { display:flex; flex-direction:column; gap:12px; align-items:center; margin-bottom:20px; }
+  .story-already-done { font-size:0.85rem; color:var(--forest); font-weight:700; }
+  .story-read-btn {
+    background:linear-gradient(135deg,var(--honey),#FFB347);
+    color:var(--bark); border:none; border-radius:50px;
+    padding:16px 36px; font-family:'Baloo 2',cursive;
+    font-size:1.25rem; font-weight:900; cursor:pointer;
+    box-shadow:0 6px 20px rgba(245,166,35,0.4);
+    transition:transform 0.15s, box-shadow 0.15s; width:100%; max-width:320px;
+  }
+  .story-read-btn:active { transform:scale(0.96); box-shadow:0 3px 10px rgba(245,166,35,0.3); }
+  .story-read-btn-again { background:linear-gradient(135deg,var(--forest-light),var(--forest)); color:white; }
+  .story-next-btn {
+    background:var(--forest-pale); color:var(--forest);
+    border:2px solid var(--forest-light); border-radius:50px;
+    padding:10px 24px; font-family:'Baloo 2',cursive;
+    font-size:0.95rem; font-weight:800; cursor:pointer;
+    transition:background 0.15s;
+  }
+  .story-next-btn:active { background:var(--forest-light); color:white; }
+
+  /* Story nav dots */
+  .story-nav-dots { display:flex; justify-content:center; gap:8px; flex-wrap:wrap; padding:8px 0; }
+  .story-nav-dot {
+    width:12px; height:12px; border-radius:50%; background:var(--forest-pale);
+    border:2px solid #CCC; cursor:pointer; transition:all 0.2s;
+  }
+  .story-nav-dot.active { background:var(--forest); border-color:var(--forest); transform:scale(1.3); }
+  .story-nav-dot.done { background:var(--honey); border-color:var(--honey-dark); }
+  .story-nav-dot.locked { opacity:0.35; cursor:default; }
+
+  /* Story complete screen */
+  .story-complete-wrap {
+    text-align:center; padding:32px 20px 40px;
+  }
 
   .panel-close {
     margin-top:24px; width:100%; padding:14px; border-radius:50px;
@@ -333,6 +559,68 @@
   .blend-letter:last-child { background:linear-gradient(135deg,var(--honey-dark),var(--honey)); transform:translateX(-8px); border-radius:8px 16px 16px 8px; }
   .blend-display.slide .blend-letter:first-child { transform:translateX(4px); }
   .blend-display.slide .blend-letter:last-child { transform:translateX(-4px); }
+
+  /* ── DIGRAPH CARD WRAPPER ── */
+  /* Two letters encased in one block — visually fused, never split */
+  .digraph-card-wrapper {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .digraph-letters {
+    display: flex;
+    gap: 0;
+    background: linear-gradient(135deg, #E8F8F0, #C7F2D0);
+    border: 3px solid var(--forest-light);
+    border-radius: 20px;
+    padding: 10px 18px;
+    box-shadow: 0 4px 16px rgba(45,106,79,0.15);
+    position: relative;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .digraph-card-wrapper:active .digraph-letters {
+    transform: scale(0.95);
+    box-shadow: 0 2px 8px rgba(45,106,79,0.2);
+  }
+  .digraph-letters span {
+    font-family: 'Baloo 2', cursive;
+    font-size: 4.5rem;
+    font-weight: 900;
+    color: var(--forest);
+    line-height: 1;
+    letter-spacing: -2px;
+  }
+  /* The "digraph bar" — a bracket line beneath both letters signalling unity */
+  .digraph-bar {
+    width: 80%;
+    height: 5px;
+    background: linear-gradient(90deg, var(--forest-light), var(--forest), var(--forest-light));
+    border-radius: 0 0 8px 8px;
+    margin-top: -2px;
+  }
+  .digraph-label {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--forest);
+    letter-spacing: 1px;
+    margin-top: 6px;
+    text-transform: uppercase;
+  }
+  /* Smaller version used in tap choices */
+  .digraph-card-wrapper.small .digraph-letters {
+    padding: 6px 12px;
+    border-radius: 14px;
+    border-width: 2px;
+  }
+  .digraph-card-wrapper.small .digraph-letters span {
+    font-size: 2rem;
+  }
+  .digraph-card-wrapper.small .digraph-bar {
+    height: 3px;
+  }
 
   /* ── CVC WORD ── */
   .cvc-display {
@@ -448,10 +736,11 @@
 
   <div class="session-progress">
     <div class="progress-label">
-      <span id="progressLabel">Item 1 of 5</span>
+      <span id="progressLabel">1 of 5</span>
       <span id="progressPct">0%</span>
     </div>
     <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <div id="sessionDots" style="text-align:center;margin-top:4px;min-height:14px;"></div>
   </div>
 
   <div id="appArea"></div>
@@ -517,8 +806,8 @@ const BLENDS = [
   {blend:'ST',pic:'⭐',word:'Star',ex:'star'},
   {blend:'SW',pic:'🏊',word:'Swim',ex:'swim'},
   {blend:'TR',pic:'🌳',word:'Tree',ex:'tree'},
-  {blend:'TW',pic:'✌️',word:'Two',ex:'two'},
-  {blend:'WR',pic:'✏️',word:'Write',ex:'write'},
+  {blend:'TW',pic:'👯',word:'Twins',ex:'twins'},
+  {blend:'QU',pic:'👸',word:'Queen',ex:'queen'},
 ];
 
 // DIGRAPHS — 22 items (sh, ch, th, wh, ph, ng — initial and final positions)
@@ -560,12 +849,12 @@ const CVC_WORDS = [
   {word:'MAN',pic:'🧑',sounds:['M','A','N']},
   {word:'VAN',pic:'🚐',sounds:['V','A','N']},
   {word:'PAN',pic:'🍳',sounds:['P','A','N']},
-  {word:'RAM',pic:'🐏',sounds:['R','A','M']},
+  {word:'YAM',pic:'🍠',sounds:['Y','A','M']},
   // -ig family
   {word:'PIG',pic:'🐷',sounds:['P','I','G']},
   {word:'BIG',pic:'🐘',sounds:['B','I','G']},
   {word:'DIG',pic:'⛏️',sounds:['D','I','G']},
-  {word:'JIG',pic:'🎵',sounds:['J','I','G']},
+  {word:'JIG',pic:'🕺',sounds:['J','I','G']},
   // -it family
   {word:'SIT',pic:'🪑',sounds:['S','I','T']},
   {word:'BIT',pic:'🦷',sounds:['B','I','T']},
@@ -582,14 +871,14 @@ const CVC_WORDS = [
   {word:'HOT',pic:'🔥',sounds:['H','O','T']},
   // -ug family
   {word:'BUG',pic:'🐛',sounds:['B','U','G']},
-  {word:'MUG',pic:'🫖',sounds:['M','U','G']},
-  {word:'HUG',pic:'🤗',sounds:['H','U','G']},
+  {word:'MUG',pic:'☕',sounds:['M','U','G']},
+  {word:'HUG',pic:'🫂',sounds:['H','U','G']},
   {word:'TUB',pic:'🛁',sounds:['T','U','B']},
   // -un family
   {word:'RUN',pic:'👟',sounds:['R','U','N']},
   {word:'SUN',pic:'☀️',sounds:['S','U','N']},
   {word:'FUN',pic:'🎉',sounds:['F','U','N']},
-  {word:'BUN',pic:'🍞',sounds:['B','U','N']},
+  {word:'BUN',pic:'🥐',sounds:['B','U','N']},
   // -ed family
   {word:'BED',pic:'🛏️',sounds:['B','E','D']},
   {word:'RED',pic:'🔴',sounds:['R','E','D']},
@@ -608,78 +897,85 @@ const CVC_WORDS = [
   {word:'DOG',pic:'🐶',sounds:['D','O','G']},
 ];
 
-// SIGHT WORDS — 48 Dolch pre-primer + primer words with sentences
-// BRAIN REASONING: Sight words bypass phonetic decoding — they need whole-word
-// visual recognition. We show word, read it aloud, then child taps it from 3 choices.
-// No typing for sight words — they are irregular and typing would enforce wrong phonics.
+// SIGHT WORDS — 48 Dolch pre-primer + primer words
+// heartIndices marks the IRREGULAR letter positions children must memorise with their "heart"
+// (0-based index into the word string). Empty array [] = fully decodable word.
 const SIGHT_WORDS = [
   // Pre-primer
-  {word:'THE',  pic:'📖', sentence:'The cat sat.'},
-  {word:'A',    pic:'🍎', sentence:'A red apple.'},
-  {word:'AND',  pic:'➕', sentence:'Cat and dog.'},
-  {word:'IS',   pic:'❓', sentence:'It is fun.'},
-  {word:'IN',   pic:'📦', sentence:'A bug in mud.'},
-  {word:'IT',   pic:'👆', sentence:'It is big.'},
-  {word:'OF',   pic:'🧩', sentence:'A cup of milk.'},
-  {word:'TO',   pic:'➡️', sentence:'Go to bed.'},
-  {word:'WAS',  pic:'⏪', sentence:'It was fun.'},
-  {word:'YOU',  pic:'👉', sentence:'Can you run?'},
-  {word:'HE',   pic:'👦', sentence:'He can hop.'},
-  {word:'SHE',  pic:'👧', sentence:'She has a hat.'},
-  {word:'WE',   pic:'👫', sentence:'We can sit.'},
-  {word:'ARE',  pic:'⭐', sentence:'We are here.'},
-  {word:'DO',   pic:'✅', sentence:'Do you see it?'},
-  {word:'DID',  pic:'✔️', sentence:'She did it!'},
-  {word:'CAN',  pic:'💪', sentence:'I can run.'},
-  {word:'HAD',  pic:'⬅️', sentence:'He had a dog.'},
-  {word:'HIS',  pic:'👦', sentence:'His hat is big.'},
-  {word:'NOT',  pic:'❌', sentence:'It is not hot.'},
-  {word:'BUT',  pic:'🔄', sentence:'Fun but fast.'},
-  {word:'AT',   pic:'📍', sentence:'Look at me!'},
-  {word:'BE',   pic:'🐝', sentence:'Can it be?'},
-  {word:'MY',   pic:'🤲', sentence:'My cat is fat.'},
-  {word:'ON',   pic:'🔝', sentence:'Sit on it.'},
-  {word:'UP',   pic:'⬆️', sentence:'Look up!'},
-  {word:'ALL',  pic:'🌍', sentence:'We all ran.'},
-  {word:'GO',   pic:'🚦', sentence:'Go and run.'},
-  {word:'SEE',  pic:'👀', sentence:'Can you see?'},
-  {word:'FOR',  pic:'🎀', sentence:'A card for you.'},
+  {word:'THE',  pic:'📖', sentence:'The cat sat.',         heartIndices:[2]},       // 'e' → /ə/ (schwa)
+  {word:'A',    pic:'🍎', sentence:'A red apple.',          heartIndices:[]},        // fully decodable
+  {word:'AND',  pic:'➕', sentence:'Cat and dog.',          heartIndices:[]},        // fully decodable
+  {word:'IS',   pic:'🔍', sentence:'It is fun.',            heartIndices:[1]},       // 's' → /z/
+  {word:'IN',   pic:'📦', sentence:'A bug in mud.',         heartIndices:[]},        // fully decodable
+  {word:'IT',   pic:'👆', sentence:'It is big.',            heartIndices:[]},        // fully decodable
+  {word:'OF',   pic:'🧩', sentence:'A cup of milk.',        heartIndices:[1]},       // 'f' → /v/
+  {word:'TO',   pic:'🚶', sentence:'Go to bed.',            heartIndices:[1]},       // 'o' → /uː/
+  {word:'WAS',  pic:'⏪', sentence:'It was fun.',           heartIndices:[1]},       // 'a' → /ʌ/
+  {word:'YOU',  pic:'👉', sentence:'Can you run?',          heartIndices:[0,1,2]},   // whole word irregular
+  {word:'HE',   pic:'🧒', sentence:'He can hop.',           heartIndices:[1]},       // 'e' → /iː/
+  {word:'SHE',  pic:'👩', sentence:'She has a hat.',        heartIndices:[2]},       // 'e' → /iː/
+  {word:'WE',   pic:'👫', sentence:'We can sit.',           heartIndices:[1]},       // 'e' → /iː/
+  {word:'ARE',  pic:'⭐', sentence:'We are here.',          heartIndices:[1,2]},     // 're' silent-ish → /ɑːr/
+  {word:'DO',   pic:'✅', sentence:'Do you see it?',        heartIndices:[1]},       // 'o' → /uː/
+  {word:'DID',  pic:'✔️', sentence:'She did it!',           heartIndices:[]},        // fully decodable
+  {word:'CAN',  pic:'💪', sentence:'I can run.',            heartIndices:[]},        // fully decodable
+  {word:'HAD',  pic:'⬅️', sentence:'He had a dog.',         heartIndices:[]},        // fully decodable
+  {word:'HIS',  pic:'👦', sentence:'His hat is big.',       heartIndices:[2]},       // 's' → /z/
+  {word:'NOT',  pic:'❌', sentence:'It is not hot.',        heartIndices:[]},        // fully decodable
+  {word:'BUT',  pic:'🔄', sentence:'Fun but fast.',         heartIndices:[]},        // fully decodable
+  {word:'AT',   pic:'📍', sentence:'Look at me!',           heartIndices:[]},        // fully decodable
+  {word:'BE',   pic:'🐝', sentence:'Can it be?',            heartIndices:[1]},       // 'e' → /iː/
+  {word:'MY',   pic:'🤲', sentence:'My cat is fat.',        heartIndices:[1]},       // 'y' → /aɪ/
+  {word:'ON',   pic:'🔝', sentence:'Sit on it.',            heartIndices:[]},        // fully decodable
+  {word:'UP',   pic:'⬆️', sentence:'Look up!',              heartIndices:[]},        // fully decodable
+  {word:'ALL',  pic:'🌍', sentence:'We all ran.',           heartIndices:[0,1]},     // 'al' → /ɔːl/
+  {word:'GO',   pic:'🚦', sentence:'Go and run.',           heartIndices:[1]},       // 'o' → /oʊ/ (long vowel)
+  {word:'SEE',  pic:'👀', sentence:'Can you see?',          heartIndices:[1,2]},     // 'ee' digraph
+  {word:'FOR',  pic:'🎀', sentence:'A card for you.',       heartIndices:[1,2]},     // 'or' → /ɔːr/
   // Primer
-  {word:'HAVE', pic:'🤝', sentence:'I have a cat.'},
-  {word:'THAT', pic:'👈', sentence:'I see that bug.'},
-  {word:'WITH', pic:'🤜', sentence:'Play with me.'},
-  {word:'HER',  pic:'👧', sentence:'Her hat is red.'},
-  {word:'THEY', pic:'👥', sentence:'They can run.'},
-  {word:'THIS', pic:'☝️', sentence:'This is fun.'},
-  {word:'FROM', pic:'📬', sentence:'A card from me.'},
-  {word:'WILL', pic:'🔮', sentence:'She will run.'},
-  {word:'SAID', pic:'💬', sentence:'He said yes.'},
-  {word:'WHAT', pic:'❓', sentence:'What is it?'},
-  {word:'COME', pic:'👋', sentence:'Come and sit.'},
-  {word:'SOME', pic:'🤏', sentence:'I want some.'},
-  {word:'WERE', pic:'🔙', sentence:'We were at home.'},
-  {word:'WHEN', pic:'🕐', sentence:'When did she go?'},
-  {word:'LIKE', pic:'❤️', sentence:'I like cats.'},
-  {word:'INTO', pic:'🚪', sentence:'Go into the house.'},
-  {word:'THEM', pic:'👥', sentence:'I see them play.'},
-  {word:'THEN', pic:'➡️', sentence:'Run, then stop.'},
-  {word:'YOUR', pic:'🫵', sentence:'I like your hat.'},
+  {word:'HAVE', pic:'🤝', sentence:'I have a cat.',         heartIndices:[2,3]},     // silent 'e', 'a' short not long
+  {word:'THAT', pic:'👈', sentence:'I see that bug.',       heartIndices:[]},        // fully decodable (th digraph taught)
+  {word:'WITH', pic:'🤜', sentence:'Play with me.',         heartIndices:[]},        // fully decodable (th digraph taught)
+  {word:'HER',  pic:'👧', sentence:'Her hat is red.',       heartIndices:[1,2]},     // 'er' → /ɜːr/
+  {word:'THEY', pic:'🫂', sentence:'They can run.',         heartIndices:[2,3]},     // 'ey' → /eɪ/
+  {word:'THIS', pic:'☝️', sentence:'This is fun.',          heartIndices:[]},        // fully decodable (th taught)
+  {word:'FROM', pic:'📬', sentence:'A card from me.',       heartIndices:[]},        // fully decodable
+  {word:'WILL', pic:'🔮', sentence:'She will run.',         heartIndices:[]},        // fully decodable
+  {word:'SAID', pic:'💬', sentence:'He said yes.',          heartIndices:[1,2]},     // 'ai' → /ɛ/
+  {word:'WHAT', pic:'❓', sentence:'What is it?',           heartIndices:[1]},       // 'wh' taught + 'a' → /ʌ/
+  {word:'COME', pic:'👋', sentence:'Come and sit.',         heartIndices:[1,3]},     // 'o' → /ʌ/, silent 'e'
+  {word:'SOME', pic:'🤏', sentence:'I want some.',          heartIndices:[1,3]},     // 'o' → /ʌ/, silent 'e'
+  {word:'WERE', pic:'🔙', sentence:'We were at home.',      heartIndices:[1,2,3]},   // 'ere' → /ɜːr/
+  {word:'WHEN', pic:'🕐', sentence:'When did she go?',      heartIndices:[]},        // fully decodable (wh taught)
+  {word:'LIKE', pic:'❤️', sentence:'I like cats.',          heartIndices:[2,3]},     // silent 'e' makes long i
+  {word:'INTO', pic:'🚪', sentence:'Go into the house.',    heartIndices:[3]},       // 'o' → /uː/
+  {word:'THEM', pic:'👥', sentence:'I see them play.',      heartIndices:[]},        // fully decodable (th taught)
+  {word:'THEN', pic:'➡️', sentence:'Run, then stop.',       heartIndices:[]},        // fully decodable (th taught)
+  {word:'YOUR', pic:'🫵', sentence:'I like your hat.',      heartIndices:[0,1,2,3]}, // fully irregular /jɔːr/
 ];
 
 const CUBBY_CORRECT = [
-  "Amazing job! 🎉","You did it! Cubby is so proud!","Wonderful! ⭐","You're a superstar reader!",
-  "WOW! That's exactly right!","Brilliant! Keep going!","Yes! Yes! Yes! 🐻","Perfect! You're so smart!",
+  "Amazing work! 🎉",
+  "You did it! Cubby is so proud!",
+  "You kept trying — and you got it! ⭐",
+  "You're working so hard!",
+  "WOW! You figured it out!",
+  "Brilliant effort! Keep going!",
+  "Yes! Yes! Yes! 🐻",
+  "You stuck with it — that's how readers grow!",
 ];
 const CUBBY_TRY = [
-  "Almost! Let's try together 🐾","Good try! Listen one more time...","You can do it! One more go!",
-  "Close! Let's hear it again 🎵","Nearly there! Try once more!",
+  "Good try! Tap the word to hear it again 🔊",
+  "Almost! Tap the picture to hear it one more time...",
+  "You can do it! Listen again and try! 🐾",
+  "Nearly there! Tap to hear it again 🎵",
 ];
 const CUBBY_GREET_LETTERS  = ["What sound does this letter make? Tap your answer!", "Listen to the sound — then tap the right letter!", "Hear the sound, then pick your answer!", "Touch the letter to hear it, then tap below!"];
-const CUBBY_GREET_BLENDS   = ["Tap the right blend! 🎵", "Slide the sounds together — then tap your answer!", "Listen to how they blend — tap the right one!"];
+const CUBBY_GREET_BLENDS   = ["Tap the right word! 🎵", "Listen to how the sounds blend — tap the word!", "Hear the blend — find the matching word!"];
 const CUBBY_GREET_DIGRAPHS = ["Two letters — one sound! Tap your answer!", "Listen to the special sound, then tap below!", "What sound do these two letters make? Tap it!"];
 const CUBBY_GREET_CVC      = ["Read this word — then tap your answer!", "Can you sound it out? Tap the word you see!", "Say each sound, then tap the right word!"];
-const CUBBY_GREET_SIGHT    = ["This is a sight word — read it fast! 👀","Can you read this word?","See it, say it, know it! 🐻"];
-const CUBBY_GREET_READIT   = ["Can you READ this word out loud? 📖","Say the whole word into the mic!","Read it aloud — you know this one! 🐻","See it and say it! 🎤"];
+const CUBBY_GREET_SIGHT    = ["Can you read this word? 👀", "See it — say it — know it! 🐻", "Cubby knows you can read this one!"];
+const CUBBY_GREET_READIT   = ["Can you READ this word out loud? 📖", "Say the whole word into the mic!", "Read it aloud — you know this one! 🐻", "See it and say it! 🎤"];
 const CUBBY_TYPE_LETTER    = ["Now type the letter on the keyboard! ⌨️","Can you find it on the keyboard?","Type it! Show me you know it! 🐾"];
 const CUBBY_TYPE_CVC       = ["Now TYPE the word! One letter at a time 🐾","Spell it out on the keyboard! You've got this!","Type each letter — you know this word!"];
 
@@ -708,9 +1004,9 @@ let settings = {
 let profiles = {
   active: 0,
   list: [
-    {name:'Child 1', lettersDone:[], blendsDone:[], digraphsDone:[], cvcDone:[], sightDone:[], readitDone:[], sessions:0, correct:0, total:0},
-    {name:'Child 2', lettersDone:[], blendsDone:[], digraphsDone:[], cvcDone:[], sightDone:[], readitDone:[], sessions:0, correct:0, total:0},
-    {name:'Child 3', lettersDone:[], blendsDone:[], digraphsDone:[], cvcDone:[], sightDone:[], readitDone:[], sessions:0, correct:0, total:0},
+    {name:'Child 1', lettersDone:[], blendsDone:[], digraphsDone:[], cvcDone:[], sightDone:[], readitDone:[], storiesDone:[], sessions:0, correct:0, total:0},
+    {name:'Child 2', lettersDone:[], blendsDone:[], digraphsDone:[], cvcDone:[], sightDone:[], readitDone:[], storiesDone:[], sessions:0, correct:0, total:0},
+    {name:'Child 3', lettersDone:[], blendsDone:[], digraphsDone:[], cvcDone:[], sightDone:[], readitDone:[], storiesDone:[], sessions:0, correct:0, total:0},
   ]
 };
 
@@ -731,15 +1027,25 @@ const SECTIONS = [
   {id:'digraphs', label:'🔡 Digraphs', free:false},
   {id:'sight',    label:'👁️ Sight',    free:false},
   {id:'readit',   label:'📖 Read It!', free:false},
+  {id:'stories',  label:'📚 Stories',  free:false},
 ];
 
 // ── UNLOCK LOGIC ──────────────────────────────────────
 // Returns true if the given section is accessible for the active profile.
 // Adults can set adultOverride to a section id to bypass auto-gating.
 function isSectionUnlocked(id) {
+  // Stories has its own unlock logic — checked independently of isPremium
+  // so children get access to early stories as a reward for learning letters
+  if (id === 'stories') {
+    if (!settings.isPremium) {
+      // Free users get the first 2 stories if they've done 6 letters
+      return profiles.list[profiles.active].lettersDone.length >= 6;
+    }
+    return profiles.list[profiles.active].lettersDone.length >= 6;
+  }
   if (!settings.isPremium) return id === 'letters';
   if (settings.adultOverride) {
-    const order = ['letters','cvc','blends','digraphs','sight','readit'];
+    const order = ['letters','cvc','blends','digraphs','sight','readit','stories'];
     const overrideIdx = order.indexOf(settings.adultOverride);
     const thisIdx = order.indexOf(id);
     return thisIdx <= overrideIdx;
@@ -751,6 +1057,7 @@ function isSectionUnlocked(id) {
   if (id === 'digraphs') return p.cvcDone.length      >= settings.gates.digraphs;
   if (id === 'sight')    return p.blendsDone.length   >= settings.gates.sight;
   if (id === 'readit')   return p.sightDone.length    >= settings.gates.readit;
+  if (id === 'stories')  return p.lettersDone.length  >= 6; // unlocks after first 6 letters
   return false;
 }
 
@@ -804,6 +1111,11 @@ function buildNav() {
 
 function switchSection(id) {
   if (!isSectionUnlocked(id)) {
+    if (id === 'stories') {
+      const done = profiles.list[profiles.active].lettersDone.length;
+      alert(`📚 Complete ${6 - done} more letter${6-done===1?'':'s'} to unlock Cubby's Stories! (${done}/6 done)`);
+      return;
+    }
     if (!settings.isPremium) { showUpgrade(); return; }
     // Premium but gated — show what's needed
     const p = profiles.list[profiles.active];
@@ -820,14 +1132,17 @@ function switchSection(id) {
   currentSection = id;
   sessionPhase = 'speak';
   buildNav();
+  if (id === 'stories') { buildStoriesView(); return; }
   buildSession();
 }
 
 // ── RENDER SESSION ────────────────────────────────────
 function renderSession() {
+  if (currentSection === 'stories') { buildStoriesView(); return; }
   buildNav();
   updateProgress();
   const item = sessionItems[sessionIdx];
+  if (!item) { buildSession(); return; } // guard: empty pool returns to buildSession
   const area = document.getElementById('appArea');
   if (currentSection === 'letters')       renderLetter(area, item);
   else if (currentSection === 'blends')   renderBlend(area, item);
@@ -851,6 +1166,8 @@ function initSpeech() {
 function speak(text, rate=0.85, pitch=1.1) {
   if (!('speechSynthesis' in window)) return;
   window.speechSynthesis.cancel();
+  // iOS Safari fix: if paused (common after 14s inactivity), resume before speaking
+  if (window.speechSynthesis.paused) window.speechSynthesis.resume();
   const u = new SpeechSynthesisUtterance(text);
   u.rate = rate; u.pitch = pitch; u.volume = 1;
   const voices = window.speechSynthesis.getVoices();
@@ -864,9 +1181,20 @@ function updateProgress() {
   const total = sessionItems.length;
   const done = sessionIdx;
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
-  document.getElementById('progressLabel').textContent = `Item ${Math.min(done+1, total)} of ${total}`;
-  document.getElementById('progressPct').textContent = pct + '%';
-  document.getElementById('progressFill').style.width = pct + '%';
+  const plEl = document.getElementById('progressLabel');
+  const ppEl = document.getElementById('progressPct');
+  const pfEl = document.getElementById('progressFill');
+  if (plEl) plEl.textContent = `${Math.min(done+1, total)} of ${total}`;
+  if (ppEl) ppEl.textContent = pct + '%';
+  if (pfEl) pfEl.style.width = pct + '%';
+  // Session dot indicators — child can count how many left
+  const dotsEl = document.getElementById('sessionDots');
+  if (dotsEl && total > 0) {
+    dotsEl.innerHTML = Array.from({length: total}, (_,i) =>
+      `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;margin:0 2px;
+       background:${i < done ? 'var(--forest)' : i === done ? 'var(--honey)' : 'var(--forest-pale)'}"></span>`
+    ).join('');
+  }
 }
 
 // ── LETTER SECTION ────────────────────────────────────
@@ -907,7 +1235,6 @@ function renderLetter(area, item) {
 
   if (!isTypePhase) {
     setTimeout(()=> playLetterSound(item.l), 500);
-    setTimeout(()=> speak(item.word + '. ' + item.word + '.', 0.72, 1.05), 1800);
   } else {
     setupTyping(item.l, 1);
   }
@@ -924,33 +1251,88 @@ function letterTypingHTML(item) {
     </div>`;
 }
 
-function playLetterSound(l) {
-  // For stop consonants, TTS needs a tiny helper vowel to produce the burst.
-  // We say it twice at very slow rate so children clearly hear the sound.
-  const stops = ['B','D','G','P','T','K','C','J','Q'];
-  const sound = soundOf(l);
-  if (stops.includes(l)) {
-    // Say it twice with a pause — e.g. "b... b" at very slow rate
-    speak(sound + '. ' + sound, 0.45, 1.2);
-  } else {
-    speak(sound, 0.5, 1.2);
-  }
-}
+// ── PHONEME MAP ───────────────────────────────────────
+// Each value is the string fed to speechSynthesis to produce the pure
+// phoneme sound — NOT the letter name. Principles:
+//   • Continuants (s,f,m,n,l,r,v,z): repeated characters sustain the sound
+//     without a schwa: 'ssss' stays /s/, 'mmmm' stays /m/
+//   • Voiced stops (b,d,g): append a minimal 'uh' written as a single 'u'
+//     because bare 'b' is often swallowed or read as the letter name by TTS
+//   • Unvoiced stops (p,t,k,c): append 'uh' — same reason
+//   • Short vowels: bare vowel letter works well at slow rate
+//   • Special: w → 'wuh', h → 'huh', y → 'yuh', q → 'kwuh', x → 'ksss'
+const PHONEME_MAP = {
+  A: { tts: 'ah',    desc: '/a/ as in apple'   },  // short vowel — 'ah' not 'aaa'
+  B: { tts: 'buh',   desc: '/b/ as in bear'     },
+  C: { tts: 'kuh',   desc: '/k/ as in cat'      },
+  D: { tts: 'duh',   desc: '/d/ as in duck'     },
+  E: { tts: 'eh',    desc: '/e/ as in egg'      },  // short vowel — 'eh' not 'eee'
+  F: { tts: 'fuh',   desc: '/f/ as in frog'     },
+  G: { tts: 'guh',   desc: '/g/ as in grape'    },
+  H: { tts: 'huh',   desc: '/h/ as in house'    },
+  I: { tts: 'ih',    desc: '/i/ as in ice cream'},  // short vowel — 'ih' not 'iii'
+  J: { tts: 'juh',   desc: '/j/ as in joystick' },
+  K: { tts: 'kuh',   desc: '/k/ as in kangaroo' },
+  L: { tts: 'luh',   desc: '/l/ as in lion'     },
+  M: { tts: 'muh',   desc: '/m/ as in moon'     },
+  N: { tts: 'nuh',   desc: '/n/ as in nest'     },
+  O: { tts: 'oh',    desc: '/o/ as in owl'      },  // short vowel — 'oh' not 'ooo'
+  P: { tts: 'puh',   desc: '/p/ as in penguin'  },
+  Q: { tts: 'kwuh',  desc: '/kw/ as in queen'   },
+  R: { tts: 'ruh',   desc: '/r/ as in rainbow'  },
+  S: { tts: 'suh',   desc: '/s/ as in snake'    },
+  T: { tts: 'tuh',   desc: '/t/ as in turtle'   },
+  U: { tts: 'uh',    desc: '/u/ as in umbrella' },  // short vowel — 'uh' not 'uuu'
+  V: { tts: 'vuh',   desc: '/v/ as in volcano'  },
+  W: { tts: 'wuh',   desc: '/w/ as in wave'     },
+  X: { tts: 'ks',    desc: '/ks/ as in xylophone'},  // two sounds, no schwa
+  Y: { tts: 'yuh',   desc: '/y/ as in yo-yo'    },
+  Z: { tts: 'zuh',   desc: '/z/ as in zebra'    },
+};
 
 function soundOf(l) {
-  // BRAIN REASONING: These strings are chosen so browser TTS reads them as the
-  // pure consonant/vowel sound, not the letter name. Tested against Chrome TTS.
-  // Voiced stops (b,d,g) and unvoiced stops (p,t,k,c) need a very short schwa
-  // written as a single isolated letter, not "uh" (which becomes "you-h").
-  // Continuants (s,f,m,n,l,r,v,z) just repeat the sound 2x for duration.
-  const map = {
-    S:'ss',  A:'a',   T:'t',   P:'p',   I:'i',   N:'nn',
-    M:'mm',  D:'d',   G:'g',   O:'o',   C:'k',   K:'k',
-    E:'e',   U:'u',   R:'rr',  H:'h',   B:'b',   F:'ff',
-    L:'ll',  J:'j',   V:'vv',  W:'w',   X:'ks',  Y:'y',
-    Z:'zz',  Q:'kw',
-  };
-  return map[l] || l.toLowerCase();
+  return (PHONEME_MAP[l.toUpperCase()] || { tts: l.toLowerCase() }).tts;
+}
+
+// Play the isolated phoneme for a letter.
+// Structure: phoneme × 2 (slow, high pitch) → pause → example word × 2
+// The double phoneme at very slow rate gives children time to hear and
+// imitate the pure sound before the semantic anchor (word) plays.
+function playLetterSound(l) {
+  const ph = soundOf(l);
+  // Pull example word from LETTERS array — guaranteed to match the picture on screen
+  const letterData = LETTERS.find(x => x.l === l.toUpperCase());
+  const exWord = letterData ? letterData.word.toLowerCase() : l.toLowerCase();
+
+  window.speechSynthesis.cancel();
+
+  // Utterance 1: phoneme once, slow and clear
+  const u1 = new SpeechSynthesisUtterance(ph);
+  u1.rate = 0.42; u1.pitch = 1.25; u1.volume = 1;
+
+  // Utterance 2: example word once, natural pace
+  const u2 = new SpeechSynthesisUtterance(exWord);
+  u2.rate = 0.75; u2.pitch = 1.05; u2.volume = 1;
+
+  const voices = window.speechSynthesis.getVoices();
+  const nice = voices.find(v => v.name.includes('Samantha') || v.name.includes('Karen') || v.name.includes('Daniel'));
+  if (nice) { u1.voice = nice; u2.voice = nice; }
+
+  window.speechSynthesis.speak(u1);
+  window.speechSynthesis.speak(u2);
+}
+
+// Play a single phoneme sound with no word — used during typing.
+// Short, crisp, at moderate rate so it doesn't lag the typing rhythm.
+function playPhoneme(l) {
+  if (!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(soundOf(l));
+  u.rate = 0.55; u.pitch = 1.2; u.volume = 1;
+  const voices = window.speechSynthesis.getVoices();
+  const nice = voices.find(v => v.name.includes('Samantha') || v.name.includes('Karen') || v.name.includes('Daniel'));
+  if (nice) u.voice = nice;
+  window.speechSynthesis.speak(u);
 }
 
 // ── BLEND SECTION ─────────────────────────────────────
@@ -973,7 +1355,7 @@ function renderBlend(area, item) {
         <div class="picture-word">${item.ex}</div>
       </div>
 
-      ${tapAnswerHTML(item.blend.toLowerCase(),'blend')}
+      ${tapAnswerHTML(item.ex.toLowerCase(),'blend')}
       <div class="feedback-msg" id="feedbackMsg"></div>
 
       <div class="nav-controls">
@@ -989,12 +1371,28 @@ function renderBlend(area, item) {
 }
 
 function playBlendSound(blend, ex) {
-  // Say each phoneme using soundOf so TTS reads sounds not letter names,
-  // then say the full blend, then the example word.
+  // Sequence: sound1 → sound2 → blend together → example word
+  // The two separate phonemes help children hear each component,
+  // then the full blend shows how they slide together.
   const s1 = soundOf(blend[0]);
   const s2 = soundOf(blend[1]);
-  const txt = s1 + '. ' + s2 + '. ' + blend.toLowerCase() + '. ' + ex;
-  speak(txt, 0.68, 1.05);
+
+  window.speechSynthesis.cancel();
+  const voices = window.speechSynthesis.getVoices();
+  const nice = voices.find(v => v.name.includes('Samantha') || v.name.includes('Karen') || v.name.includes('Daniel'));
+
+  // u1: each sound separately, slow
+  const u1 = new SpeechSynthesisUtterance(s1 + '. ' + s2);
+  u1.rate = 0.5; u1.pitch = 1.15; u1.volume = 1;
+  if (nice) u1.voice = nice;
+
+  // u2: the full blend said naturally, then the example word once
+  const u2 = new SpeechSynthesisUtterance(blend.toLowerCase() + '. ' + ex);
+  u2.rate = 0.72; u2.pitch = 1.05; u2.volume = 1;
+  if (nice) u2.voice = nice;
+
+  window.speechSynthesis.speak(u1);
+  window.speechSynthesis.speak(u2);
 }
 
 // ── CVC SECTION ───────────────────────────────────────
@@ -1049,40 +1447,85 @@ function revealCVCLetters(item) {
 }
 
 function cvcTypingHTML(item) {
-  const boxes = item.word.split('').map((_,i)=>`<div class="type-box" id="typeBox${i}"></div>`).join('');
+  const boxes = item.word.split('').map((_,i) =>
+    `<div class="type-box" id="typeBox${i}"></div>`
+  ).join('');
+
+  const dots = item.sounds.map((s, i) => `
+    <div style="display:flex;flex-direction:column;align-items:center;">
+      <div class="blend-dot" id="blendDot${i}"
+        data-idx="${i}"
+        data-letter="${s}"
+        onmouseenter="onDotDrag(${i})"
+        ontouchmove="onDotDrag(${i})">
+      </div>
+      <div class="blend-label" id="blendLabel${i}">·</div>
+    </div>`
+  ).join('');
+
   return `
     <div class="keyboard-section">
-      <h4>Type the word <strong>${item.word}</strong></h4>
+      <h4>Can you spell it? Tap the letters! 🐾</h4>
       <div class="type-display">${boxes}</div>
+      <div class="blending-track" id="blendingTrack"
+        onmousedown="startBlendDrag('${item.word}')"
+        ontouchstart="startBlendDrag('${item.word}')"
+        onmouseleave="onBlendTrackLeave()"
+        ontouchend="onBlendTrackLeave()">
+        ${dots}
+      </div>
+      <div style="font-size:0.72rem;color:#BBB;text-align:center;margin:-10px 0 14px;">
+        ← drag across dots to blend →
+      </div>
       ${keyboardHTML()}
     </div>`;
 }
 
 // ── DIGRAPH SECTION ───────────────────────────────────
 // BRAIN REASONING: Digraphs are two letters making ONE sound — a conceptual leap.
-// We show both letters joined visually, play the sound, show a picture anchor.
-// No typing — the digraph pair (e.g. SH) is what matters, not spelling the full word.
+// The digraph-card-wrapper visually fuses the two letters into one unit with a
+// bracket bar beneath, making it impossible for a child to see them as separate.
+// Tapping anywhere on the block plays the unified phoneme — never one letter at a time.
+
+// Phoneme labels shown under the digraph bar — child-friendly sound descriptions
+const DIGRAPH_PHONEME_LABEL = {
+  SH: 'shhh 🤫', CH: 'ch ch ✋', TH: 'th 👅',
+  WH: 'wh 💨',   PH: 'fff 🌬️',  NG: 'ng 🔔',
+};
+
+function digraphCardHTML(dg, { onclick = '', size = 'large' } = {}) {
+  const label = DIGRAPH_PHONEME_LABEL[dg.toUpperCase()] || dg;
+  const sizeClass = size === 'small' ? ' small' : '';
+  const clickAttr = onclick ? `onclick="${onclick}"` : '';
+  return `
+    <div class="digraph-card-wrapper${sizeClass}" ${clickAttr}>
+      <div class="digraph-letters">
+        <span>${dg[0].toUpperCase()}</span><span>${dg[1].toUpperCase()}</span>
+      </div>
+      <div class="digraph-bar"></div>
+      <div class="digraph-label">${label}</div>
+    </div>`;
+}
+
 function renderDigraph(area, item) {
+  const posLabel = item.pos === 'start'
+    ? `<span style="color:var(--forest-light)">${item.dg.toUpperCase()}</span>${item.ex.slice(2)}`
+    : `${item.ex.slice(0,-2)}<span style="color:var(--forest-light)">${item.dg.toUpperCase()}</span>`;
+
   area.innerHTML = `
     <div class="card">
       ${cubbyHTML(rnd(CUBBY_GREET_DIGRAPHS))}
       <div class="stars-row" id="starsRow"><span class="star" id="star0">⭐</span><span class="star" id="star1">⭐</span><span class="star" id="star2">⭐</span></div>
 
-      <div style="display:flex;justify-content:center;align-items:center;gap:12px;margin:20px 0;">
-        <div style="display:flex;gap:0;cursor:pointer;" onclick="playDigraphSound('${item.dg}','${item.ex}')">
-          <div class="blend-letter" style="border-radius:16px 4px 4px 16px">${item.dg[0]}</div>
-          <div class="blend-letter" style="background:linear-gradient(135deg,var(--honey-dark),var(--honey));border-radius:4px 16px 16px 4px">${item.dg[1]}</div>
-        </div>
-        <div style="font-size:2rem;color:var(--forest-light);font-weight:900;">→</div>
-        <div style="font-size:3.5rem;font-weight:900;font-family:'Baloo 2',cursive;color:var(--forest);
-          background:var(--forest-pale);padding:12px 20px;border-radius:16px;">
-          ${item.dg.toLowerCase()}
-        </div>
+      <div style="display:flex;flex-direction:column;align-items:center;margin:24px 0 8px;">
+        ${digraphCardHTML(item.dg, { onclick: `playDigraphSound('${item.dg}','${item.ex}')` })}
+        <div style="font-size:0.78rem;color:#BBB;margin-top:8px;">Tap to hear the sound</div>
       </div>
 
-      <div class="picture-card" style="margin:0 auto;max-width:220px;">
+      <div class="picture-card" style="margin:0 auto;max-width:240px;margin-bottom:4px;">
         <div class="picture-emoji" style="font-size:3.5rem">${item.pic}</div>
-        <div class="picture-word">${item.ex} <span style="color:var(--forest-light);font-size:1rem">(${item.pos === 'start' ? item.dg + ' at start' : item.dg + ' at end'})</span></div>
+        <div class="picture-word" style="font-size:1.3rem">${posLabel}</div>
+        <div style="font-size:0.85rem;color:#AAA;margin-top:2px;">${item.dg} is at the ${item.pos === 'start' ? 'start' : 'end'}</div>
       </div>
 
       ${tapAnswerHTML(item.dg.toLowerCase(),'digraph')}
@@ -1101,7 +1544,7 @@ function playDigraphSound(dg, ex) {
   // TTS-friendly digraph sounds — tested for Chrome TTS clarity
   const sounds = {SH:'sh', CH:'ch', TH:'th', WH:'wh', PH:'ff', NG:'ng'};
   const s = sounds[dg] || dg.toLowerCase();
-  speak(s + '. ' + s + '. ' + ex, 0.65, 1.08);
+  speak(s + '. ' + ex, 0.65, 1.08);
 }
 
 // ── SIGHT WORD SECTION ────────────────────────────────
@@ -1115,21 +1558,35 @@ function renderSight(area, item) {
     <button class="tap-choice" style="font-size:1.4rem;min-width:110px"
       onclick="checkAnswer('${c}','${item.word.toLowerCase()}','sight')">${c.toUpperCase()}</button>`).join('');
 
+  // Build heart-word letter display
+  const heartIndices = item.heartIndices || [];
+  const hasHearts = heartIndices.length > 0;
+  const letterBlocks = item.word.split('').map((ch, i) => {
+    const isHeart = heartIndices.includes(i);
+    return `<span class="hw-letter${isHeart?' is-heart':''}">
+      ${isHeart ? `<span class="heart-badge">❤️</span>` : ''}
+      ${ch}
+    </span>`;
+  }).join('');
+
   area.innerHTML = `
     <div class="card">
       ${cubbyHTML(rnd(CUBBY_GREET_SIGHT))}
       <div class="stars-row" id="starsRow"><span class="star" id="star0">⭐</span><span class="star" id="star1">⭐</span><span class="star" id="star2">⭐</span></div>
 
-      <div style="text-align:center;margin:24px 0;">
-        <div onclick="playSightWord('${item.word}','${item.sentence}')"
-          style="display:inline-block;font-family:'Baloo 2',cursive;font-size:4rem;font-weight:900;
-          color:var(--bark);background:linear-gradient(135deg,var(--honey),#FFD07A);
-          padding:16px 40px;border-radius:20px;box-shadow:0 8px 28px rgba(245,166,35,0.35);
-          cursor:pointer;letter-spacing:2px;">
-          ${item.word}
+      <div style="text-align:center;margin:32px 0 20px;padding-top:28px;">
+        <div class="hw-word-display" onclick="playSightWord('${item.word}','${item.sentence}')">
+          ${letterBlocks}
         </div>
-        <div style="margin-top:14px;font-size:1.1rem;color:#888;font-style:italic;">"${item.sentence}"</div>
-        <div style="font-size:0.82rem;color:#BBB;margin-top:6px;">Tap the word to hear it again</div>
+        ${hasHearts ? `
+        <div style="margin-top:14px;font-size:0.82rem;font-weight:700;color:#c0392b;">
+          ❤️ The red letters sound different — remember them with your heart!
+        </div>` : `
+        <div style="margin-top:14px;font-size:0.82rem;font-weight:700;color:var(--forest);">
+          ✅ Every letter makes its regular sound — you can sound this one out!
+        </div>`}
+        <div style="margin-top:10px;font-size:1.05rem;color:#888;font-style:italic;">"${item.sentence}"</div>
+        <div style="font-size:0.78rem;color:#BBB;margin-top:6px;">Tap the word to hear it again</div>
       </div>
 
       <div class="tap-answer-section">
@@ -1231,7 +1688,7 @@ function renderReadIt(area, item) {
 function skipReadIt() {
   // Graceful fallback for devices without mic
   markItemDone();
-  document.getElementById('nextBtn').disabled = false;
+  const _nb = document.getElementById('nextBtn'); if(_nb) _nb.disabled = false;
 }
 
 function showNoMicMsg() {
@@ -1255,22 +1712,27 @@ function setupTyping(target, len) {
 
 function typeLetter(l) {
   if (typedSoFar.length >= typingLen) return;
-  const expectedChar = typingTarget[typedSoFar.length].toUpperCase();
-  const box = document.getElementById('typeBox'+typedSoFar.length);
+  const idx = typedSoFar.length;
+  const expectedChar = typingTarget[idx].toUpperCase();
+  const box = document.getElementById('typeBox' + idx);
 
   // Remove highlight from typed key
-  const prevKey = document.getElementById('key'+expectedChar);
+  const prevKey = document.getElementById('key' + expectedChar);
   if(prevKey) prevKey.classList.remove('key-highlight');
 
   if (l === expectedChar) {
     typedSoFar += l;
     if(box) { box.textContent = l; box.classList.add('filled','correct-box'); }
+    // Light the corresponding Elkonin dot and reveal its letter
+    const dot = document.getElementById('blendDot' + idx);
+    if(dot) dot.classList.add('lit');
+    const label = document.getElementById('blendLabel' + idx);
+    if(label) label.textContent = l;
+    playPhoneme(l);
 
     if (typedSoFar.length === typingLen) {
-      // Word complete!
-      onTypingComplete(true);
+      setTimeout(()=> onTypingComplete(true), 400);
     } else {
-      // Highlight the next key
       const nextKey = document.getElementById('key'+typingTarget[typedSoFar.length].toUpperCase());
       if(nextKey) nextKey.classList.add('key-highlight');
     }
@@ -1284,8 +1746,49 @@ function typeBack() {
   typedSoFar = typedSoFar.slice(0,-1);
   const box = document.getElementById('typeBox'+typedSoFar.length);
   if(box) { box.textContent=''; box.classList.remove('filled','correct-box','wrong-box'); }
+  // Un-light dot and hide label
+  const dot = document.getElementById('blendDot' + typedSoFar.length);
+  if(dot) dot.classList.remove('lit');
+  const label = document.getElementById('blendLabel' + typedSoFar.length);
+  if(label) label.textContent = '·';
   const nextKey = document.getElementById('key'+typingTarget[typedSoFar.length].toUpperCase());
   if(nextKey) nextKey.classList.add('key-highlight');
+}
+
+// ── ELKONIN DRAG BLEND ────────────────────────────────
+// When child drags across dots, each dot pulses and its phoneme plays.
+// On release, the full blended word is spoken.
+let blendDragActive = false;
+let lastDragIdx = -1;
+let currentBlendWord = '';
+
+function onDotDrag(idx) {
+  if (!blendDragActive) return; // only fire during active drag/press
+  if (idx === lastDragIdx) return; // don't repeat same dot
+  lastDragIdx = idx;
+  const dot = document.getElementById('blendDot' + idx);
+  if (!dot) return;
+  // Visual pulse
+  dot.classList.add('drag-active');
+  setTimeout(()=> dot.classList.remove('drag-active'), 350);
+  // Play the phoneme for this position
+  if (currentBlendWord[idx]) playPhoneme(currentBlendWord[idx]);
+}
+
+function onBlendTrackLeave() {
+  if (!blendDragActive) return;
+  blendDragActive = false;
+  lastDragIdx = -1;
+  // Speak the full blended word after a short pause
+  if (currentBlendWord) {
+    setTimeout(()=> speak(currentBlendWord.toLowerCase(), 0.65, 1.1), 300);
+  }
+}
+
+function startBlendDrag(word) {
+  blendDragActive = true;
+  lastDragIdx = -1;
+  currentBlendWord = word;
 }
 
 function onTypingComplete(success) {
@@ -1293,7 +1796,9 @@ function onTypingComplete(success) {
     earnStar(2);
     setFeedback(rnd(CUBBY_CORRECT), true);
     triggerCelebration();
-    document.getElementById('nextBtn').disabled = false;
+    markItemDone();
+    const nb = document.getElementById('nextBtn');
+    if (nb) nb.disabled = false;
   }
 }
 
@@ -1330,28 +1835,49 @@ function micHTML(target, type) {
 // must actually discriminate sounds, not just guess by elimination.
 function tapAnswerHTML(target, type) {
   const choices = generateChoices(target, type);
-  const btns = choices.map(c => `
-    <button class="tap-choice" onclick="tapAnswer('${c}','${target}','${type}')">${c.toUpperCase()}</button>
-  `).join('');
+
+  // For digraphs: render each choice as a unified digraph card, not a plain button
+  const btns = type === 'digraph'
+    ? choices.map(c => `
+        <div onclick="tapAnswer('${c}','${target}','${type}')" style="display:inline-block;">
+          ${digraphCardHTML(c.toUpperCase(), { size: 'small' })}
+        </div>`).join('')
+    : choices.map(c => `
+        <button class="tap-choice" onclick="tapAnswer('${c}','${target}','${type}')">${c.toUpperCase()}</button>
+      `).join('');
+
   return `
     <div class="tap-answer-section">
       <div style="font-size:0.9rem;font-weight:700;color:#AAA;margin-bottom:12px;text-align:center;">
         Tap the right answer!
       </div>
-      <div class="tap-choices">${btns}</div>
+      <div class="tap-choices" style="${type==='digraph'?'gap:20px;':''}">
+        ${btns}
+      </div>
     </div>`;
 }
 
 function generateChoices(target, type) {
   let pool = [];
   if (type === 'letter') {
-    const confusables = {s:'z,c',a:'e,o',t:'d,p',p:'b,d',i:'e,l',n:'m,u',m:'n,w',d:'b,p',g:'c,q',o:'a,u',c:'k,g',k:'c,x',e:'i,a',u:'o,a',r:'n,m',h:'n,b',b:'d,p',f:'v,t',l:'i,j',j:'g,y',v:'w,f',w:'m,v',x:'z,k',y:'j,g',z:'s,x',q:'g,p'};
+    // IMPORTANT: Never pair b/d/p together — they are the most commonly reversed
+    // letters for young readers. Showing all three simultaneously causes confusion.
+    const confusables = {
+      s:'z,f',  a:'e,o',  t:'d,f',  p:'m,s',  i:'e,l',  n:'m,h',
+      m:'n,w',  d:'g,f',  g:'c,o',  o:'a,u',  c:'k,s',  k:'c,x',
+      e:'i,a',  u:'o,a',  r:'n,h',  h:'n,r',  b:'s,f',  f:'v,t',
+      l:'i,j',  j:'g,y',  v:'w,u',  w:'m,v',  x:'z,k',  y:'j,v',
+      z:'s,x',  q:'c,g',
+    };
     const alts = (confusables[target] || 'a,b').split(',');
     pool = [target, alts[0], alts[1]];
   } else if (type === 'blend') {
-    const all = BLENDS.map(b => b.blend.toLowerCase());
-    const others = all.filter(b => b !== target).sort(() => Math.random()-0.5).slice(0,2);
-    while (others.length < 2) others.push(all.find(b => b !== target && !others.includes(b)) || 'bl');
+    // Show full example words, not abstract blend letters (BL/BR/CR)
+    // Children recognise 'blue' more readily than 'BL'
+    const all = BLENDS.map(b => b.ex.toLowerCase());
+    const others = all.filter(b => b !== target && !target.startsWith(b.slice(0,2)))
+      .sort(() => Math.random()-0.5).slice(0,2);
+    while (others.length < 2) others.push(all.find(b => b !== target && !others.includes(b)) || 'blue');
     pool = [target, ...others];
   } else if (type === 'digraph') {
     const all = [...new Set(DIGRAPHS.map(d => d.dg.toLowerCase()))];
@@ -1360,11 +1886,25 @@ function generateChoices(target, type) {
     pool = [target, ...others];
   } else if (type === 'cvc') {
     const all = CVC_WORDS.map(w => w.word.toLowerCase());
-    const others = all.filter(w => w !== target).sort(() => Math.random()-0.5).slice(0,2);
-    while (others.length < 2) others.push(all.find(w => w !== target && !others.includes(w)) || 'cat');
+    // Prefer distractors that share the vowel or ending — harder but more educational
+    const vowel = target[1];
+    const ending = target.slice(1);
+    const sameVowel = all.filter(w => w !== target && w[1] === vowel);
+    const sameEnding = all.filter(w => w !== target && w.slice(1) === ending);
+    // Pick 1 same-ending + 1 same-vowel if possible, else random
+    const d1 = sameEnding.length ? sameEnding[Math.floor(Math.random()*sameEnding.length)] : null;
+    const d2pool = sameVowel.filter(w => w !== d1);
+    const d2 = d2pool.length ? d2pool[Math.floor(Math.random()*d2pool.length)] : null;
+    const fallback = all.filter(w => w !== target && w !== d1 && w !== d2);
+    const others = [
+      d1 || fallback[Math.floor(Math.random()*fallback.length)],
+      d2 || fallback[Math.floor(Math.random()*fallback.length) + 1] || 'cat',
+    ].filter(Boolean).slice(0,2);
     pool = [target, ...others];
-  } else if (type === 'sight') {
-    const all = SIGHT_WORDS.map(w => w.word.toLowerCase());
+  } else if (type === 'sight' || type === 'readit') {
+    const sightAll = SIGHT_WORDS.map(w => w.word.toLowerCase());
+    const cvcAll   = CVC_WORDS.map(w => w.word.toLowerCase());
+    const all = type === 'readit' ? [...sightAll, ...cvcAll] : sightAll;
     const others = all.filter(w => w !== target).sort(() => Math.random()-0.5).slice(0,2);
     while (others.length < 2) others.push(all.find(w => w !== target && !others.includes(w)) || 'the');
     pool = [target, ...others];
@@ -1469,8 +2009,10 @@ function checkAnswer(said, target, type, dryRun = false) {
     correct = noSpace === target || noSpace.startsWith(target) ||
               noSpace === soundOf(target.toUpperCase()).replace(/[^a-z]/g,'');
   } else if (type === 'blend' || type === 'digraph') {
-    // Child says the blend sound or a word starting with the blend
-    correct = noSpace.startsWith(target) || noSpace === target;
+    // target is now the full example word (e.g. 'blue' for BL blend)
+    // Accept exact word match (tap) or any word starting with the same 2-letter blend
+    const blendPrefix = target.slice(0,2);
+    correct = words.includes(target) || clean === target || noSpace.startsWith(blendPrefix);
   } else if (type === 'cvc' || type === 'sight' || type === 'readit') {
     // Must be an actual word match — no substring matching to avoid 'scatter' matching 'cat'
     correct = words.includes(target) || clean === target;
@@ -1494,17 +2036,32 @@ function checkAnswer(said, target, type, dryRun = false) {
       setTimeout(()=>{ sessionPhase = 'type'; renderSession(); }, 1800);
     } else {
       markItemDone();
-      document.getElementById('nextBtn').disabled = false;
+      const _nb = document.getElementById('nextBtn'); if(_nb) _nb.disabled = false;
     }
   } else {
     retryCount++;
     if (retryCount >= 3) {
       setFeedback("Let's hear it together! 🐾 " + target.toUpperCase(), false);
+      // Speak the answer so child hears it, not just reads it
+      setTimeout(()=> speak(target, 0.65, 1.1), 300);
       markItemDone();
-      document.getElementById('nextBtn').disabled = false;
+      const _nb = document.getElementById('nextBtn'); if(_nb) _nb.disabled = false;
       retryCount = 0;
     } else {
       setFeedback(rnd(CUBBY_TRY), false);
+      // Replay the target sound after a short pause so child hears it again
+      setTimeout(() => {
+        if (currentSection === 'letters') playLetterSound(target.toUpperCase());
+        else if (currentSection === 'cvc') speak(target, 0.65, 1.1);
+        else if (currentSection === 'sight') speak(target, 0.7, 1.05);
+        else if (currentSection === 'blends') {
+          const b = BLENDS.find(x => x.ex.toLowerCase() === target);
+          if (b) playBlendSound(b.blend, b.ex);
+        } else if (currentSection === 'digraphs') {
+          const d = DIGRAPHS.find(x => x.dg.toLowerCase() === target || x.ex.toLowerCase() === target);
+          if (d) playDigraphSound(d.dg, d.ex);
+        }
+      }, 600);
     }
   }
   return correct;
@@ -1523,6 +2080,7 @@ function markItemDone() {
 
 // ── NAVIGATION ────────────────────────────────────────
 function nextItem() {
+  blendDragActive = false; currentBlendWord = ''; // FIX: reset drag state between items
   sessionIdx++;
   sessionPhase = 'speak';
   retryCount = 0;
@@ -1532,6 +2090,7 @@ function nextItem() {
 }
 
 function prevItem() {
+  blendDragActive = false; currentBlendWord = ''; // FIX: reset drag state between items
   if (sessionIdx === 0 && sessionPhase === 'speak') return;
   if (sessionPhase === 'type') {
     // Going back to speak phase of same item — re-enable Next since speak was already passed
@@ -1624,10 +2183,19 @@ function setFeedback(msg, correct) {
 }
 
 function earnStar(idx) {
-  // Stars 0 = first try, 1 = second try, 2 = after typing
-  for(let i=0;i<=idx;i++){
-    const s=document.getElementById('star'+i);
-    if(s&&!s.classList.contains('earned')){ s.classList.add('earned'); }
+  // idx 0 = correct first try (lights star 0)
+  // idx 1 = correct second try (lights star 1, not 0)
+  // idx 2 = typing complete (lights star 2 only — speak phase stars already set)
+  if (idx === 2) {
+    // Typing star: only light star 2
+    const s = document.getElementById('star2');
+    if (s && !s.classList.contains('earned')) s.classList.add('earned');
+  } else {
+    // Speak phase: light all stars up to and including idx
+    for (let i = 0; i <= idx; i++) {
+      const s = document.getElementById('star' + i);
+      if (s && !s.classList.contains('earned')) s.classList.add('earned');
+    }
   }
 }
 
@@ -1756,15 +2324,46 @@ function renderPanelSettings() {
     </div>
 
     <div class="progress-report">
-      <div style="font-weight:800;color:var(--forest);margin-bottom:8px">📊 ${p.name}'s Progress</div>
-      <div class="report-row"><span>🔤 Letters</span><span class="report-val">${p.lettersDone.length} / ${LETTERS.length}</span></div>
-      <div class="report-row"><span>🔀 Blends</span><span class="report-val">${p.blendsDone.length} / ${BLENDS.length}</span></div>
-      <div class="report-row"><span>🔡 Digraphs</span><span class="report-val">${p.digraphsDone.length} / ${DIGRAPHS.length}</span></div>
-      <div class="report-row"><span>📝 CVC Words</span><span class="report-val">${p.cvcDone.length} / ${CVC_WORDS.length}</span></div>
-      <div class="report-row"><span>👁️ Sight Words</span><span class="report-val">${p.sightDone.length} / ${SIGHT_WORDS.length}</span></div>
-      <div class="report-row"><span>📖 Read It!</span><span class="report-val">${p.readitDone.length} read</span></div>
-      <div class="report-row"><span>Sessions done</span><span class="report-val">${p.sessions}</span></div>
-      <div class="report-row"><span>Accuracy</span><span class="report-val">${p.total>0?Math.round((p.correct/p.total)*100):0}%</span></div>
+      <div style="font-weight:800;color:var(--forest);margin-bottom:12px">📊 ${p.name}'s Progress</div>
+
+      ${[
+        { id:'letters',  label:'🔤 Letters',     done:p.lettersDone.length,   total:LETTERS.length,    always:true },
+        { id:'cvc',      label:'📝 CVC Words',   done:p.cvcDone.length,       total:CVC_WORDS.length,  always:false },
+        { id:'blends',   label:'🔀 Blends',      done:p.blendsDone.length,    total:BLENDS.length,     always:false },
+        { id:'digraphs', label:'🔡 Digraphs',    done:p.digraphsDone.length,  total:DIGRAPHS.length,   always:false },
+        { id:'sight',    label:'👁️ Sight Words', done:p.sightDone.length,     total:SIGHT_WORDS.length,always:false },
+        { id:'readit',   label:'📖 Read It!',    done:p.readitDone.length,    total:CVC_WORDS.length+SIGHT_WORDS.length, always:false },
+        { id:'stories',  label:'📚 Stories',     done:(p.storiesDone||[]).length, total:DECODABLE_STORIES.length, always:false },
+      ].map(s => {
+        const pct = s.total > 0 ? Math.round((s.done/s.total)*100) : 0;
+        const complete = s.done >= s.total;
+        const unlocked = s.always || isSectionUnlocked(s.id);
+        if (!unlocked) return `
+          <div class="report-section-row">
+            <div class="report-section-top">
+              <span style="color:#bbb">${s.label}</span>
+              <span class="report-locked">🔒 locked</span>
+            </div>
+          </div>`;
+        return `
+          <div class="report-section-row">
+            <div class="report-section-top">
+              <span>${s.label}</span>
+              <div style="display:flex;align-items:center;gap:8px">
+                ${complete ? `<span class="report-badge">✓ Done!</span>` : ''}
+                <span class="report-section-count">${s.done} / ${s.total}</span>
+              </div>
+            </div>
+            <div class="report-bar-track">
+              <div class="report-bar-fill ${complete?'complete':''}" style="width:${pct}%"></div>
+            </div>
+          </div>`;
+      }).join('')}
+
+      <div style="display:flex;justify-content:space-between;margin-top:12px;padding-top:10px;border-top:1px solid rgba(0,0,0,0.08);font-size:0.88rem;">
+        <span>📅 Sessions: <strong>${p.sessions}</strong></span>
+        <span>🎯 Accuracy: <strong>${p.total>0?Math.round((p.correct/p.total)*100):0}%</strong></span>
+      </div>
     </div>
 
     <div style="margin-top:20px">
@@ -1865,7 +2464,7 @@ function toggleSetting(key, btn) {
 function resetProfile() {
   if(!confirm('Reset progress for '+profiles.list[profiles.active].name+'?')) return;
   const p = profiles.list[profiles.active];
-  p.lettersDone=[]; p.blendsDone=[]; p.digraphsDone=[]; p.cvcDone=[]; p.sightDone=[]; p.readitDone=[];
+  p.lettersDone=[]; p.blendsDone=[]; p.digraphsDone=[]; p.cvcDone=[]; p.sightDone=[]; p.readitDone=[]; p.storiesDone=[];
   p.sessions=0; p.correct=0; p.total=0;
   renderPanelSettings();
 }
@@ -1906,6 +2505,98 @@ function simulatePremium() {
   buildNav();
 }
 
+
+// ══════════════════════════════════════════════════════════
+// ── TAB 5: CUBBY'S MINI-BOOKS (DECODABLE STORIES) ────────
+// ══════════════════════════════════════════════════════════
+
+const DECODABLE_STORIES = [
+  {id:'story_01',title:"Nip the Cat",emoji:'🐱',theme:'linear-gradient(135deg,#FFF9F0,#FDECD3)',accentColor:'#F5A623',text:"Nip is a cat.\nNip sat.\nNip sat on a mat.\nNip sat in the sun.\nNip is a tan cat.",wordFocus:'Letters: S A T N I',unlockReq:'letters',unlockCount:6},
+  {id:'story_02',title:"Tip and Pin",emoji:'📌',theme:'linear-gradient(135deg,#F0F8FF,#D6ECFF)',accentColor:'#4AACDA',text:"A pin is in a tin.\nA tip is on the pin.\nTip the tin.\nIt is in!\nPat the tin.",wordFocus:'Letters: T I P N',unlockReq:'letters',unlockCount:6},
+  {id:'story_03',title:"Sam and the Pig",emoji:'🐷',theme:'linear-gradient(135deg,#FFF0F5,#FFD6E7)',accentColor:'#FF6B9D',text:"Sam has a pig.\nThe pig is big.\nThe big pig can dig.\nSam and the pig sit.\nThe pig is Sam's.",wordFocus:'CVC: pig, big, dig, sit',unlockReq:'letters',unlockCount:12},
+  {id:'story_04',title:"The Red Hen",emoji:'🐔',theme:'linear-gradient(135deg,#FFF5F0,#FFE0D0)',accentColor:'#FF6B35',text:"The hen is red.\nThe red hen has an egg.\nThe egg is in a den.\nThe hen sat on it.\nThe egg is not big.",wordFocus:'CVC: hen, red, egg, den',unlockReq:'letters',unlockCount:16},
+  {id:'story_05',title:"Dot and the Dog",emoji:'🐶',theme:'linear-gradient(135deg,#F0FFF4,#D0F5E0)',accentColor:'#2D6A4F',text:"Dot has a dog.\nThe dog sat on a log.\nThe dog got a bone.\nDot ran to the dog.\nThe dog and Dot nap.",wordFocus:'CVC: dot, dog, log, ran, nap',unlockReq:'cvc',unlockCount:8},
+  {id:'story_06',title:"Fun in the Sun",emoji:'☀️',theme:'linear-gradient(135deg,#FFFEF0,#FFF9C4)',accentColor:'#F5C400',text:"The sun is up.\nBen and Pam run.\nThey run and jump.\nBen has fun.\nPam has fun too.\nFun in the sun!",wordFocus:'CVC + sight: run, jump, fun, sun',unlockReq:'cvc',unlockCount:12},
+  {id:'story_07',title:"The Blue Bug",emoji:'🐛',theme:'linear-gradient(135deg,#F4F0FF,#E0D6FF)',accentColor:'#7C4DFF',text:"A bug is on a log.\nThe bug is blue.\nThe blue bug can hug.\nThe bug sat on a rug.\nI like the blue bug.",wordFocus:'CVC + sight: bug, hug, rug, like',unlockReq:'cvc',unlockCount:16},
+  {id:'story_08',title:"Skip and Flip",emoji:'🐸',theme:'linear-gradient(135deg,#F0FFF8,#C8F7E2)',accentColor:'#00B894',text:"A frog can skip.\nA frog can flip.\nSkip and flip, frog!\nThe frog skips on a rock.\nSkip, flip, plop!",wordFocus:'Blends: skip, flip, frog, plop',unlockReq:'cvc',unlockCount:20},
+  {id:'story_09',title:"The Big Ship",emoji:'🚢',theme:'linear-gradient(135deg,#F0F6FF,#CCDEFF)',accentColor:'#2979FF',text:"A big ship is at the dock.\nShe will go to the shop.\nShe had fish and chips.\nThe ship went back.\nWhat a fun trip!",wordFocus:'Digraphs: ship, shop, fish, chips',unlockReq:'sight',unlockCount:10},
+  {id:'story_10',title:"Cubby's Big Day",emoji:'🐻',theme:'linear-gradient(135deg,#FFF8F0,#FFE8C8)',accentColor:'#F5A623',text:"Cubby woke up in the morning.\nHe had some toast and jam.\nHe went to play with his friends.\nThey ran and jumped all day.\nCubby was happy at the end!",wordFocus:'Full sentences + sight words',unlockReq:'sight',unlockCount:20},
+];
+
+let currentStoryIdx = 0;
+let storyViewMode = 'grid';
+
+function isStoryUnlocked(story) {
+  const p = profiles.list[profiles.active];
+  // Free users: only stories with unlockCount <= 6 (stories 1 & 2)
+  if (!settings.isPremium && story.unlockCount > 6) return false;
+  const doneMap = {
+    letters: p.lettersDone.length, cvc: p.cvcDone.length,
+    blends: p.blendsDone.length,  digraphs: p.digraphsDone.length,
+    sight: p.sightDone.length,    readit: p.readitDone.length,
+  };
+  return (doneMap[story.unlockReq] || 0) >= story.unlockCount;
+}
+
+function buildStoriesView() {
+  currentSection = 'stories'; storyViewMode = 'grid'; buildNav();
+  const area = document.getElementById('appArea');
+  const p = profiles.list[profiles.active];
+  const plEl=document.getElementById('progressLabel'),ppEl=document.getElementById('progressPct'),pfEl=document.getElementById('progressFill'),dotsEl=document.getElementById('sessionDots');
+  if(plEl)plEl.textContent=''; if(ppEl)ppEl.textContent=''; if(pfEl)pfEl.style.width='0%'; if(dotsEl)dotsEl.innerHTML='';
+  const storiesRead=(p.storiesDone||[]).length, totalStories=DECODABLE_STORIES.length;
+  area.innerHTML=`<div class="stories-grid-wrap"><div class="stories-header"><div style="font-size:3rem;line-height:1">🐻</div><h2 style="margin:8px 0 2px;font-size:1.4rem;color:var(--forest)">Cubby's Mini-Books</h2><p style="color:#888;font-size:0.88rem;margin:0 0 10px;">${storiesRead} of ${totalStories} stories read</p><div class="stories-overall-bar"><div class="stories-overall-fill" style="width:${Math.round((storiesRead/totalStories)*100)}%"></div></div></div><div class="stories-grid">${DECODABLE_STORIES.map((story,idx)=>{const unlocked=isStoryUnlocked(story),done=(p.storiesDone||[]).includes(story.id);return `<div class="story-card-thumb${unlocked?'':' story-locked'}${done?' story-done':''}" style="background:${story.theme};border-color:${done?story.accentColor:'transparent'}" onclick="${unlocked?`openStory(${idx})`:'showStoryLocked(this)'}"><div class="story-thumb-emoji">${story.emoji}</div><div class="story-thumb-title">${story.title}</div><div class="story-thumb-focus">${story.wordFocus}</div>${done?`<div class="story-done-badge">✓ Read!</div>`:''} ${!unlocked?`<div class="story-lock-overlay">🔒<br><span>Keep practising!</span></div>`:''}</div>`;}).join('')}</div></div>`;
+}
+
+function showStoryLocked(el){el.classList.add('story-shake');setTimeout(()=>el.classList.remove('story-shake'),500);}
+
+function openStory(idx) {
+  currentStoryIdx=idx; storyViewMode='read';
+  const story=DECODABLE_STORIES[idx], area=document.getElementById('appArea'), p=profiles.list[profiles.active];
+  const done=(p.storiesDone||[]).includes(story.id), isLast=idx>=DECODABLE_STORIES.length-1;
+  const nextStory=!isLast?DECODABLE_STORIES[idx+1]:null, nextUnlocked=nextStory&&isStoryUnlocked(nextStory);
+  const paragraphs=story.text.split('\n').map(line=>`<p class="story-line">${line}</p>`).join('');
+  area.innerHTML=`<div class="story-read-wrap"><button class="story-back-btn" onclick="buildStoriesView()">← All Stories</button><div class="story-read-card" style="background:${story.theme}"><div class="story-read-emoji">${story.emoji}</div><h2 class="story-read-title" style="color:${story.accentColor}">${story.title}</h2><div class="story-focus-chip">${story.wordFocus}</div><div class="story-text-block" id="storyTextBlock">${paragraphs}</div><div style="text-align:center;margin-top:20px;"><button class="story-listen-btn" id="storyListenBtn" onclick="listenToStory(${idx})">🔊 Listen to Story</button></div></div><div class="story-actions">${done?`<div class="story-already-done">✓ You already read this one! Amazing!</div>`:''}<button class="story-read-btn${done?' story-read-btn-again':''}" onclick="markStoryRead(${idx})">${done?'🔄 Read Again!':"I Read It! 🎉"}</button>${nextUnlocked?`<button class="story-next-btn" onclick="openStory(${idx+1})">Next Story → ${nextStory.emoji}</button>`:''}</div><div class="story-nav-dots">${DECODABLE_STORIES.map((s,i)=>{const isDone=(p.storiesDone||[]).includes(s.id),isUnlocked=isStoryUnlocked(s);return `<span class="story-nav-dot${i===idx?' active':''}${isDone?' done':''}${!isUnlocked?' locked':''}" onclick="${isUnlocked?`openStory(${i})`:''}" title="${s.title}"></span>`;}).join('')}</div></div>`;
+}
+
+function listenToStory(idx) {
+  const story=DECODABLE_STORIES[idx]; if(!story) return;
+  window.speechSynthesis.cancel();
+  if(window.speechSynthesis.paused) window.speechSynthesis.resume();
+  const lines=story.text.split('\n'), lineEls=document.querySelectorAll('.story-line');
+  const listenBtn=document.getElementById('storyListenBtn');
+  if(listenBtn){listenBtn.textContent='⏸ Reading...'; listenBtn.disabled=true;}
+  let lineIdx=0;
+  function readNextLine(){
+    if(lineIdx>=lines.length){lineEls.forEach(el=>el.classList.remove('story-line-active'));if(listenBtn){listenBtn.textContent='🔊 Listen Again';listenBtn.disabled=false;}return;}
+    lineEls.forEach(el=>el.classList.remove('story-line-active'));
+    if(lineEls[lineIdx]){lineEls[lineIdx].classList.add('story-line-active');lineEls[lineIdx].scrollIntoView({behavior:'smooth',block:'nearest'});}
+    const u=new SpeechSynthesisUtterance(lines[lineIdx]);
+    u.rate=0.7; u.pitch=1.05; u.volume=1;
+    const voices=window.speechSynthesis.getVoices();
+    const nice=voices.find(v=>v.name.includes('Samantha')||v.name.includes('Karen')||v.name.includes('Daniel'));
+    if(nice) u.voice=nice;
+    u.onend=()=>{lineIdx++;setTimeout(readNextLine,350);};
+    u.onerror=()=>{lineIdx++;readNextLine();};
+    window.speechSynthesis.speak(u);
+  }
+  readNextLine();
+}
+
+function markStoryRead(idx) {
+  const story=DECODABLE_STORIES[idx]; if(!story) return;
+  const p=profiles.list[profiles.active];
+  if(!p.storiesDone) p.storiesDone=[];
+  const alreadyDone=p.storiesDone.includes(story.id);
+  if(!alreadyDone){p.storiesDone.push(story.id);p.sessions++;p.correct++;p.total++;}
+  window.speechSynthesis.cancel(); triggerCelebration();
+  const area=document.getElementById('appArea'), isLast=idx>=DECODABLE_STORIES.length-1;
+  const nextStory=!isLast?DECODABLE_STORIES[idx+1]:null, nextUnlocked=nextStory&&isStoryUnlocked(nextStory);
+  area.innerHTML=`<div class="story-complete-wrap"><div style="font-size:5rem;line-height:1;margin-bottom:12px">🐻</div><h2 style="color:var(--forest);margin:0 0 6px;">Amazing reading!</h2><p style="font-size:1.1rem;color:#555;margin:0 0 4px;font-weight:700;">${story.title}</p><p style="color:#888;font-size:0.9rem;margin:0 0 20px;">${alreadyDone?'You read it again — great practice!':'You read a whole story! ⭐'}</p><div style="font-size:2.5rem;margin-bottom:24px;letter-spacing:8px">⭐⭐⭐</div><div style="display:flex;flex-direction:column;gap:12px;align-items:center;">${nextUnlocked?`<button class="story-read-btn" onclick="openStory(${idx+1})">Next Story: ${nextStory.title} ${nextStory.emoji} →</button>`:!isLast?`<div style="background:var(--forest-pale);border-radius:12px;padding:12px 20px;font-size:0.9rem;color:var(--forest);font-weight:700;text-align:center;">Keep practising to unlock the next story! 🔒</div>`:`<div style="background:linear-gradient(135deg,var(--honey),#FFD07A);border-radius:16px;padding:16px 24px;font-size:1rem;color:var(--bark);font-weight:800;text-align:center;">🏆 You've read ALL of Cubby's stories!<br>You're a real reader!</div>`}<button class="story-next-btn" onclick="buildStoriesView()">← All Stories</button></div></div>`;
+  setTimeout(()=>speak(alreadyDone?'Great reading!':'Amazing! You read a whole story!',0.8,1.1),400);
+}
+
+
 // ── UTILS ─────────────────────────────────────────────
 function rnd(arr) { return arr[Math.floor(Math.random()*arr.length)]; }
 
@@ -1913,7 +2604,15 @@ function rnd(arr) { return arr[Math.floor(Math.random()*arr.length)]; }
 window.addEventListener('load', ()=>{
   if('speechSynthesis' in window) {
     window.speechSynthesis.getVoices();
-    window.speechSynthesis.onvoiceschanged = ()=>window.speechSynthesis.getVoices();
+    // Use addEventListener (not = assignment) to avoid overwriting other handlers
+    window.speechSynthesis.addEventListener('voiceschanged', ()=> window.speechSynthesis.getVoices());
+    // iOS Safari keepalive: speechSynthesis pauses after ~14s of inactivity.
+    // Calling resume() every 10s prevents the stall without audible effect.
+    setInterval(()=>{
+      if('speechSynthesis' in window && window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      }
+    }, 10000);
   }
   buildSession();
 });
