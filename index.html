@@ -1664,6 +1664,7 @@ function renderReadIt(area, item) {
         <div style="font-size:0.9rem;font-weight:800;color:var(--forest);margin-top:6px;">
           ${micActive ? 'Tap 🎤 and READ the word!' : '⚠️ Mic not available on this device'}
         </div>
+        <div id="micHeard" style="display:none;font-size:0.85rem;color:#888;font-style:italic;margin-top:6px;"></div>
         ${!micActive ? `<button class="btn-nav btn-next" style="margin:16px auto 0;display:block" onclick="skipReadIt()">Skip (no mic) →</button>` : ''}
       </div>
       <div id="readitTapFallback" style="display:none;margin-top:12px;">
@@ -1937,18 +1938,29 @@ function setupMic(target, type) {
 
   recognition.onresult = (e) => {
     if (thisRecognition !== currentRecognition) return; // stale, ignore
-    // Try all alternatives — accept the first one that matches
+    updateMicUI(false);
+
+    // Collect all alternatives
     const transcripts = [];
     for (let i = 0; i < e.results[0].length; i++) {
       transcripts.push(e.results[0][i].transcript.trim().toLowerCase());
     }
-    updateMicUI(false);
-    // Try each alternative until one matches, or use the best one
-    let matched = false;
-    for (const said of transcripts) {
-      if (checkAnswer(said, target, type, true)) { matched = true; break; }
+
+    // Show what was heard (helps with testing + child knows it worked)
+    const heard = document.getElementById('micHeard');
+    if (heard) {
+      heard.textContent = '🎤 I heard: "' + transcripts[0] + '"';
+      heard.style.display = 'block';
     }
-    if (!matched) checkAnswer(transcripts[0], target, type, false);
+
+    // Find the best-matching transcript (dryRun = test only)
+    let bestMatch = null;
+    for (const said of transcripts) {
+      if (checkAnswer(said, target, type, true)) { bestMatch = said; break; }
+    }
+
+    // Commit exactly once — use the matched transcript if found, otherwise the top result
+    checkAnswer(bestMatch !== null ? bestMatch : transcripts[0], target, type, false);
   };
 
   recognition.onerror = (e) => {
