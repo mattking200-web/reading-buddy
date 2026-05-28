@@ -771,16 +771,16 @@
 const LETTERS = [
   {l:'S',pic:'🐍',word:'Snake'},{l:'A',pic:'🍎',word:'Apple'},
   {l:'T',pic:'🐢',word:'Turtle'},{l:'P',pic:'🐧',word:'Penguin'},
-  {l:'I',pic:'🍦',word:'Ice cream'},{l:'N',pic:'🪺',word:'Nest'},
+  {l:'I',pic:'🐛',word:'Insect'},{l:'N',pic:'🪺',word:'Nest'},
   {l:'M',pic:'🌙',word:'Moon'},{l:'D',pic:'🦆',word:'Duck'},
-  {l:'G',pic:'🍇',word:'Grape'},{l:'O',pic:'🦉',word:'Owl'},
+  {l:'G',pic:'🍇',word:'Grape'},{l:'O',pic:'🐙',word:'Octopus'},
   {l:'C',pic:'🐱',word:'Cat'},{l:'K',pic:'🦘',word:'Kangaroo'},
   {l:'E',pic:'🥚',word:'Egg'},{l:'U',pic:'☂️',word:'Umbrella'},
   {l:'R',pic:'🌈',word:'Rainbow'},{l:'H',pic:'🏠',word:'House'},
   {l:'B',pic:'🐻',word:'Bear'},{l:'F',pic:'🐸',word:'Frog'},
   {l:'L',pic:'🦁',word:'Lion'},{l:'J',pic:'🕹️',word:'Joystick'},
   {l:'V',pic:'🌋',word:'Volcano'},{l:'W',pic:'🌊',word:'Wave'},
-  {l:'X',pic:'🎷',word:'Xylophone'},{l:'Y',pic:'🪀',word:'Yo-yo'},
+  {l:'X',pic:'🦊',word:'Fox'},{l:'Y',pic:'🪀',word:'Yo-yo'},
   {l:'Z',pic:'🦓',word:'Zebra'},{l:'Q',pic:'👑',word:'Queen'},
 ];
 
@@ -1270,13 +1270,13 @@ const PHONEME_MAP = {
   F: { tts: 'fuh',   desc: '/f/ as in frog'     },
   G: { tts: 'guh',   desc: '/g/ as in grape'    },
   H: { tts: 'huh',   desc: '/h/ as in house'    },
-  I: { tts: 'ih',    desc: '/i/ as in ice cream'},  // short vowel — 'ih' not 'iii'
+  I: { tts: 'ih',    desc: '/i/ as in insect'   },  // short vowel — 'ih' not 'iii'
   J: { tts: 'juh',   desc: '/j/ as in joystick' },
   K: { tts: 'kuh',   desc: '/k/ as in kangaroo' },
   L: { tts: 'luh',   desc: '/l/ as in lion'     },
   M: { tts: 'muh',   desc: '/m/ as in moon'     },
   N: { tts: 'nuh',   desc: '/n/ as in nest'     },
-  O: { tts: 'oh',    desc: '/o/ as in owl'      },  // short vowel — 'oh' not 'ooo'
+  O: { tts: 'o',     desc: '/o/ as in octopus'  },  // short vowel — bare 'o' at slow rate, NOT 'oh' (long O)
   P: { tts: 'puh',   desc: '/p/ as in penguin'  },
   Q: { tts: 'kwuh',  desc: '/kw/ as in queen'   },
   R: { tts: 'ruh',   desc: '/r/ as in rainbow'  },
@@ -1285,7 +1285,7 @@ const PHONEME_MAP = {
   U: { tts: 'uh',    desc: '/u/ as in umbrella' },  // short vowel — 'uh' not 'uuu'
   V: { tts: 'vuh',   desc: '/v/ as in volcano'  },
   W: { tts: 'wuh',   desc: '/w/ as in wave'     },
-  X: { tts: 'ks',    desc: '/ks/ as in xylophone'},  // two sounds, no schwa
+  X: { tts: 'ks',    desc: '/ks/ as in fox'     },  // two sounds, no schwa — X at end of word
   Y: { tts: 'yuh',   desc: '/y/ as in yo-yo'    },
   Z: { tts: 'zuh',   desc: '/z/ as in zebra'    },
 };
@@ -1631,7 +1631,12 @@ function keyboardHTML() {
 // Words are drawn from the child's already-seen CVC + sight word pools, so
 // they are always practising words they have been introduced to — not cold reads.
 function renderReadIt(area, item) {
-  const micActive = hasSpeechSupport();
+  const micActive = hasSpeechSupport() && !micPermissionDenied;
+  const tapChoices = generateChoices(item.word.toLowerCase(),'readit')
+    .map(c=>`<button class="tap-choice" style="font-size:1.4rem;min-width:110px"
+      onclick="checkAnswer('${c}','${item.word.toLowerCase()}','readit')">${c.toUpperCase()}</button>`)
+    .join('');
+
   area.innerHTML = `
     <div class="card">
       ${cubbyHTML(rnd(CUBBY_GREET_READIT))}
@@ -1646,34 +1651,37 @@ function renderReadIt(area, item) {
         <div style="font-family:'Baloo 2',cursive;font-size:3.6rem;font-weight:900;
           color:var(--bark);background:linear-gradient(135deg,var(--forest-pale),#B7F5D0);
           padding:14px 36px;border-radius:20px;box-shadow:var(--shadow);
-          display:inline-block;letter-spacing:3px;">
+          display:inline-block;letter-spacing:3px;cursor:pointer;"
+          onclick="speak('${item.word.toLowerCase()}',0.65,1.1)">
           ${item.word}
         </div>
-        ${item.hint ? `<div style="margin-top:12px;font-size:1rem;color:#999;font-style:italic;">"${item.hint}"</div>` : ''}
+        <div style="font-size:0.72rem;color:#BBB;margin-top:6px;">Tap word to hear it</div>
+        ${item.hint ? `<div style="margin-top:8px;font-size:1rem;color:#999;font-style:italic;">"${item.hint}"</div>` : ''}
       </div>
 
+      ${micActive ? `
       <div class="mic-section">
-        <button class="mic-btn ${micActive?'':'disabled-mic'}" id="micBtn"
-          onclick="${micActive?'startListening()':'showNoMicMsg()'}"
-          style="${micActive?'':'opacity:0.35;cursor:not-allowed'}">🎤</button>
+        <button class="mic-btn" id="micBtn" onclick="startListening()">🎤</button>
         <div class="wave-bars" id="waveBars">
           <div class="wave-bar"></div><div class="wave-bar"></div>
           <div class="wave-bar"></div><div class="wave-bar"></div>
           <div class="wave-bar"></div>
         </div>
         <div style="font-size:0.9rem;font-weight:800;color:var(--forest);margin-top:6px;">
-          ${micActive ? 'Tap 🎤 and READ the word!' : '⚠️ Mic not available on this device'}
+          Tap 🎤 and READ the word!
         </div>
         <div id="micHeard" style="display:none;font-size:0.85rem;color:#888;font-style:italic;margin-top:6px;"></div>
-        ${!micActive ? `<button class="btn-nav btn-next" style="margin:16px auto 0;display:block" onclick="skipReadIt()">Skip (no mic) →</button>` : ''}
-      </div>
-      <div id="readitTapFallback" style="display:none;margin-top:12px;">
-        <div style="font-size:0.85rem;font-weight:700;color:#888;margin-bottom:8px;">Tap the word you just read:</div>
-        <div class="tap-choices">${generateChoices(item.word.toLowerCase(),'readit').map(c=>`
-          <button class="tap-choice" style="font-size:1.4rem;min-width:110px"
-            onclick="checkAnswer('${c}','${item.word.toLowerCase()}','readit')">${c.toUpperCase()}</button>`).join('')}
+        <div id="readitTapFallback" style="display:none;margin-top:16px;">
+          <div style="font-size:0.85rem;font-weight:700;color:#888;margin-bottom:8px;">Or tap the word:</div>
+          <div class="tap-choices">${tapChoices}</div>
         </div>
-      </div>
+      </div>` : `
+      <div style="text-align:center;margin:8px 0 16px;">
+        <div style="font-size:0.88rem;font-weight:700;color:var(--forest);margin-bottom:14px;">
+          Read the word above, then tap it below! 👇
+        </div>
+        <div class="tap-choices">${tapChoices}</div>
+      </div>`}
 
       <div class="feedback-msg" id="feedbackMsg"></div>
 
@@ -1683,7 +1691,7 @@ function renderReadIt(area, item) {
       </div>
     </div>`;
 
-  setupMic(item.word.toLowerCase(), 'readit');
+  if (micActive) setupMic(item.word.toLowerCase(), 'readit');
 }
 
 function skipReadIt() {
@@ -1693,7 +1701,7 @@ function skipReadIt() {
 }
 
 function showNoMicMsg() {
-  setFeedback('Mic not available — use Chrome on desktop for Read It! 🎤', false);
+  setFeedback('Tap the word below to show you read it! 👇', false);
 }
 
 // ── TYPING LOGIC ──────────────────────────────────────
